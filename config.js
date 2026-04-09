@@ -12,11 +12,9 @@
     window.BACKEND_WS_URL   = "ws://localhost:8000/ws/iot";
     window.FACTORYGPT_API_KEY = "";   // blank = dev mode
   } else {
-    // Production — edit these two lines after deploying the Render service
-    window.BACKEND_API_BASE = "https://factorygpt-cloud.onrender.com";
-    window.BACKEND_WS_URL   = "wss://factorygpt-cloud.onrender.com/ws/iot";
-    // Paste the value from your Render dashboard (FACTORYGPT_API_KEY env var).
-    // If Render auto-generated it, grab it from the "Environment" tab.
-    window.FACTORYGPT_API_KEY = "";
+    // Production — pointing at the live Render broker
+    window.BACKEND_API_BASE   = "https://factorygpt-cloud.onrender.com";
+    window.BACKEND_WS_URL     = "wss://factorygpt-cloud.onrender.com/ws/iot";
+    window.FACTORYGPT_API_KEY = "d6oorxSgmiSZqM0cp+JcxcSeI3gc8Y+MsQD07LnJXDQ=";
   }
 })();
