@@ -20,7 +20,7 @@ from dotenv import load_dotenv
 
 # ── Environment ───────────────────────────────────────────────────────────────
 load_dotenv()
-SARVAM_API_KEY   = os.getenv("SARVAM_API_KEY", "YOUR_SARVAM_API_KEY_HERE")
+SARVAM_API_KEY   = os.getenv("SARVAM_API_KEY", "sk_ry4d2q1k_zmcLaq0SA9AgXUEvbrW28gdG")
 DB_PATH          = os.getenv("DB_PATH", "factorygpt.db")
 
 # ── App ───────────────────────────────────────────────────────────────────────
