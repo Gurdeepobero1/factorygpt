@@ -2,7 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#185fa5">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>FactoryGPT AI Manufacturing Platform</title>
 <style>
 :root{--color-background-primary:#fff;--color-background-secondary:#f8f9fa;--color-border-secondary:#ddd;--color-border-tertiary:#eee;--color-text-primary:#111;--color-text-secondary:#555;--color-text-tertiary:#888;--border-radius-md:6px;--border-radius-lg:10px;--font-sans:system-ui,-apple-system,sans-serif}
@@ -136,10 +140,183 @@ table.lt{width:100%;border-collapse:collapse;font-size:11px}
 .cam-overlay { position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.7); display:flex; flex-direction:column; align-items:center; justify-content:center; padding:15px; z-index:10; }
 
 /* CONFIGURATOR MODAL */
-.modal-overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.8); z-index:9999; display:flex; align-items:center; justify-content:center; }
-.modal-box { background:#fff; padding:30px; border-radius:var(--border-radius-lg); width:580px; box-shadow:0 10px 25px rgba(0,0,0,0.2); }
+.modal-overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.8); z-index:9999; display:flex; align-items:center; justify-content:center; padding:16px; }
+.modal-box { background:#fff; padding:30px; border-radius:var(--border-radius-lg); width:580px; max-width:100%; max-height:90vh; overflow-y:auto; box-shadow:0 10px 25px rgba(0,0,0,0.2); }
 .modal-title { font-size:18px; font-weight:bold; margin-bottom:10px; color:#111; }
 .modal-sub { font-size:12px; color:#555; margin-bottom:20px; line-height:1.5; }
+
+/* ── Smooth page transitions ─────────────────────────────────────────────── */
+.fg-panel { transition: opacity .18s ease; }
+.fg-panel.hidden { display:none!important; }
+.fg-panel.fading { opacity:0; }
+
+/* ── Mobile bottom nav bar (hidden on desktop) ───────────────────────────── */
+.mob-nav { display:none; }
+
+/* ════════════════════════════════════════════════════════════════════════════
+   MOBILE  ≤ 768px
+   ════════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+
+  /* ── Page shell ── */
+  body { padding: 0; background: #f0f2f5; }
+
+  .fg {
+    flex-direction: column;
+    min-height: 100dvh;
+    border-radius: 0;
+    border: none;
+    padding-bottom: 64px; /* room for bottom nav */
+  }
+
+  /* ── Hide desktop sidebar ── */
+  .fg-side { display: none; }
+
+  /* ── Top bar ── */
+  .fg-top { padding: 10px 14px; }
+  .fg-top-t { font-size: 15px; }
+  .fg-top-s { font-size: 10px; }
+
+  /* ── Panels ── */
+  .fg-panel { padding: 12px 14px; }
+
+  /* ── KPI grid: 2×2 ── */
+  .kpi-g { grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+  .kpi-v { font-size: 20px; }
+
+  /* ── Dashboard rows: stack ── */
+  .cr, .cr2 { grid-template-columns: 1fr; gap: 10px; }
+
+  /* ── Camera grid: stack ── */
+  .multi-cam-grid { grid-template-columns: 1fr; gap: 10px; }
+  .cam-container { height: 180px; }
+
+  /* ── Production table: horizontal scroll ── */
+  .cc { overflow-x: auto; }
+  table.lt { min-width: 480px; }
+
+  /* ── Digital twin grid: stack ── */
+  .tw-g { grid-template-columns: 1fr; }
+
+  /* ── Worker grid: 2-col ── */
+  .wk-g { grid-template-columns: 1fr 1fr; }
+
+  /* ── Data input form: stack ── */
+  .fg-g { grid-template-columns: 1fr; }
+
+  /* ── Touch-friendly form inputs ── */
+  .f-inp, .ai-tf { font-size: 16px !important; padding: 10px 12px; min-height: 44px; }
+
+  /* ── Touch-friendly buttons ── */
+  .btn-p, .btn-ai, .btn-tw, .btn-reset { min-height: 44px; font-size: 14px; }
+  .qb { padding: 8px 14px; font-size: 12px; min-height: 36px; }
+
+  /* ── AI chat: fills remaining viewport height ── */
+  #p-ai { padding: 0; display: flex; flex-direction: column; height: 100%; }
+  .ai-wrap { height: 100%; border-radius: 0; border-left: none; border-right: none; border-bottom: none; }
+  .ai-msgs { padding: 12px; }
+  .ai-inp-row { padding: 10px 12px; padding-bottom: max(10px, env(safe-area-inset-bottom)); }
+  .ai-tf { font-size: 16px !important; }
+  .qp { padding: 10px 14px 4px; margin: 0; }
+
+  /* ── AI message bubbles wider on mobile ── */
+  .ai-m { max-width: 96%; }
+
+  /* ── Modal: full-screen on mobile ── */
+  .modal-overlay { padding: 0; align-items: flex-end; }
+  .modal-box {
+    width: 100%;
+    max-height: 92dvh;
+    border-radius: 16px 16px 0 0;
+    padding: 20px 16px;
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
+    animation: slideUp .25s ease;
+  }
+  .modal-title { font-size: 16px; }
+
+  /* ── Config modal: stack inputs ── */
+  .modal-box > div[style*="display:flex"] { flex-direction: column !important; gap: 0 !important; }
+
+  /* ── Slide-up animation for modal ── */
+  @keyframes slideUp { from { transform: translateY(60px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+  /* ── Mobile bottom navigation ── */
+  .mob-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: 64px;
+    padding-bottom: env(safe-area-inset-bottom);
+    background: #fff;
+    border-top: 0.5px solid #ddd;
+    z-index: 1000;
+    box-shadow: 0 -2px 12px rgba(0,0,0,.07);
+  }
+  .mob-nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    cursor: pointer;
+    color: #888;
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: .02em;
+    padding: 6px 0;
+    border: none;
+    background: none;
+    -webkit-tap-highlight-color: transparent;
+    transition: color .15s;
+  }
+  .mob-nav-item.active { color: #185fa5; }
+  .mob-nav-icon { font-size: 18px; line-height: 1; }
+  .mob-nav-badge {
+    position: absolute;
+    top: 6px;
+    background: #e24b4a;
+    color: #fff;
+    font-size: 8px;
+    font-weight: 600;
+    min-width: 14px;
+    height: 14px;
+    border-radius: 7px;
+    padding: 0 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+  .mob-nav-item { position: relative; }
+
+  /* ── Status indicator in top bar (replaces sidebar footer) ── */
+  .mob-status {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 10px;
+    color: #2d9a5f;
+    font-weight: 500;
+  }
+  .mob-status .live-dot { flex-shrink: 0; }
+
+  /* ── Card padding tighter ── */
+  .cc { padding: 10px 12px; }
+  .kpi-c { padding: 10px 11px; }
+  .sec-h { font-size: 13px; }
+
+  /* ── Slider thumb bigger for touch ── */
+  input[type=range] { height: 24px; }
+  input[type=range]::-webkit-slider-thumb { width: 22px; height: 22px; }
+}
+
+/* ── Very small phones (≤ 380px) ── */
+@media (max-width: 380px) {
+  .kpi-v { font-size: 18px; }
+  .wk-g { grid-template-columns: 1fr; }
+  .fg-top-t { font-size: 13px; }
+}
 </style>
 </head>
 <body>
@@ -212,14 +389,42 @@ table.lt{width:100%;border-collapse:collapse;font-size:11px}
     </div>
   </nav>
 
+  <!-- Mobile bottom navigation -->
+  <nav class="mob-nav" id="mob-nav">
+    <button class="mob-nav-item active" data-p="dash">
+      <span class="mob-nav-icon">▦</span>
+      <span>Dashboard</span>
+    </button>
+    <button class="mob-nav-item" data-p="ai">
+      <span class="mob-nav-icon">◈</span>
+      <span>AI Brain</span>
+    </button>
+    <button class="mob-nav-item" data-p="alrt">
+      <span class="mob-nav-icon">⊙</span>
+      <span>Alerts</span>
+      <span class="mob-nav-badge" id="mob-alert-badge" style="display:none">0</span>
+    </button>
+    <button class="mob-nav-item" data-p="work">
+      <span class="mob-nav-icon">◉</span>
+      <span>Workers</span>
+    </button>
+    <button class="mob-nav-item" data-p="data">
+      <span class="mob-nav-icon">⊞</span>
+      <span>Data</span>
+    </button>
+  </nav>
+
   <div class="fg-main">
     <div class="fg-top">
       <div>
         <div class="fg-top-t" id="tb-title">Production Dashboard</div>
-        <div class="fg-top-s">Dynamic Hardware Stream Configuration</div>
+        <div class="mob-status" id="mob-status-row" style="display:none">
+          <span class="live-dot" style="background:#888"></span>
+          <span id="mob-ws-label">Connecting…</span>
+        </div>
       </div>
-      <div style="display:flex;gap:6px;">
-        <span class="bdg b-green">System Online</span>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <span class="bdg b-green" id="top-status-badge">System Online</span>
       </div>
     </div>
 
@@ -557,7 +762,9 @@ function renderAlerts() {
     return`<div class="al-item"><div class="al-dot" style="background:${dc}"></div><div style="flex:1"><div style="display:flex;align-items:center;gap:7px;margin-bottom:2px"><span class="al-t">${a.t}</span><span class="bdg ${bc}" style="font-size:9px">${a.lvl}</span></div><div class="al-d">${a.d}</div><div class="al-m">${a.tm}</div></div></div>`;
   }).join('');
   const critCount = FD.alerts.filter(a=>a.lvl==='critical').length;
-  document.getElementById('alert-badge').textContent = critCount; document.getElementById('alert-top-badge').textContent = critCount + " Critical";
+  document.getElementById('alert-badge').textContent = critCount;
+  document.getElementById('alert-top-badge').textContent = critCount + " Critical";
+  syncMobAlertBadge(critCount);
 }
 
 function initCharts(){
@@ -588,17 +795,84 @@ function doSaveWorker() {
     document.getElementById('wk-out').textContent = 'Worker logged and Dashboard updated.'; document.getElementById('wk-out').style.color = '#2d9a5f';
 }
 
-document.querySelectorAll('.fn').forEach(el=>{
-  el.addEventListener('click',()=>{
-    const p=el.dataset.p;
-    document.querySelectorAll('.fn').forEach(n=>n.classList.remove('active'));
-    el.classList.add('active');
-    document.querySelectorAll('.fg-panel').forEach(x=>x.classList.add('hidden'));
-    document.getElementById('p-'+p).classList.remove('hidden');
-    const titles={dash:'Production Dashboard',data:'Data Input',ai:'AI Brain',twin:'Digital Twin Simulator',work:'Worker Analytics',alrt:'Alerts & Notifications'};
-    document.getElementById('tb-title').textContent=titles[p];
+// ── Unified nav: syncs desktop sidebar + mobile bottom bar ───────────────────
+const PAGE_TITLES = {
+  dash: 'Production Dashboard',
+  data: 'Data Input',
+  ai:   'AI Brain',
+  twin: 'Digital Twin',
+  work: 'Workers',
+  alrt: 'Alerts'
+};
+
+function navigateTo(p) {
+  // Desktop sidebar
+  document.querySelectorAll('.fn').forEach(n => {
+    n.classList.toggle('active', n.dataset.p === p);
   });
+  // Mobile bottom nav
+  document.querySelectorAll('.mob-nav-item').forEach(n => {
+    n.classList.toggle('active', n.dataset.p === p);
+  });
+  // Panels — fade transition
+  document.querySelectorAll('.fg-panel').forEach(x => {
+    if (!x.classList.contains('hidden')) {
+      x.classList.add('fading');
+      setTimeout(() => { x.classList.add('hidden'); x.classList.remove('fading'); }, 150);
+    } else {
+      x.classList.add('hidden');
+    }
+  });
+  const target = document.getElementById('p-' + p);
+  setTimeout(() => {
+    target.classList.remove('hidden');
+    target.style.opacity = 0;
+    requestAnimationFrame(() => { target.style.opacity = ''; });
+  }, 160);
+  document.getElementById('tb-title').textContent = PAGE_TITLES[p] || p;
+  // Scroll panel to top
+  setTimeout(() => { target.scrollTop = 0; }, 180);
+}
+
+document.querySelectorAll('.fn, .mob-nav-item').forEach(el => {
+  el.addEventListener('click', () => navigateTo(el.dataset.p));
 });
+
+// ── Mobile: show status row in top bar, sync WS label ────────────────────────
+function updateMobStatus(text, color) {
+  const label = document.getElementById('mob-ws-label');
+  const dot   = document.querySelector('#mob-status-row .live-dot');
+  if (label) label.textContent = text;
+  if (dot)   dot.style.background = color;
+}
+
+function showMobStatusRow() {
+  const row = document.getElementById('mob-status-row');
+  if (row && window.innerWidth <= 768) row.style.display = 'flex';
+}
+showMobStatusRow();
+window.addEventListener('resize', showMobStatusRow);
+
+// ── Mobile alert badge sync ───────────────────────────────────────────────────
+function syncMobAlertBadge(count) {
+  const badge = document.getElementById('mob-alert-badge');
+  if (!badge) return;
+  if (count > 0) { badge.textContent = count; badge.style.display = 'flex'; }
+  else           { badge.style.display = 'none'; }
+}
+
+// ── Mobile keyboard awareness for AI chat ────────────────────────────────────
+// When the keyboard opens on mobile, keep the input visible
+const aiInput = document.getElementById('ai-in');
+if (aiInput) {
+  aiInput.addEventListener('focus', () => {
+    if (window.innerWidth <= 768) {
+      setTimeout(() => {
+        document.querySelector('.ai-inp-row')?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }, 350);
+    }
+  });
+}
 
 // ── WebSocket — auto-reconnect with exponential back-off ──────────────────────
 let motionState = { 0: "IDLE", 1: "0.0%" };
@@ -620,14 +894,16 @@ function wsConnect() {
     wsReconnectDelay = 1000;
     document.getElementById("ws-status").textContent = "Nodes Connected";
     document.getElementById("ws-status").style.color = "#2d9a5f";
-    // Flush any pending init commands queued while offline
+    updateMobStatus("Live", "#2d9a5f");
     wsPendingInits.forEach(cmd => ws.send(JSON.stringify(cmd)));
     wsPendingInits = [];
   };
 
   ws.onclose = () => {
-    document.getElementById("ws-status").textContent = `Reconnecting in ${(wsReconnectDelay/1000).toFixed(0)}s…`;
+    const secs = (wsReconnectDelay/1000).toFixed(0);
+    document.getElementById("ws-status").textContent = `Reconnecting in ${secs}s…`;
     document.getElementById("ws-status").style.color = "#ef9f27";
+    updateMobStatus("Reconnecting…", "#ef9f27");
     setTimeout(wsConnect, wsReconnectDelay);
     wsReconnectDelay = Math.min(wsReconnectDelay * 2, 30000);
   };
@@ -660,6 +936,7 @@ function wsConnect() {
         if (FD.alerts.length > 50) FD.alerts.length = 50;
         localStorage.setItem('factoryAlerts', JSON.stringify(FD.alerts));
         renderAlerts();
+        syncMobAlertBadge(FD.alerts.filter(a => a.lvl === 'critical').length);
       }
     }
 
