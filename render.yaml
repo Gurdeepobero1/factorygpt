@@ -11,10 +11,18 @@ services:
     startCommand: "uvicorn cloud_backend:app --host 0.0.0.0 --port $PORT"
     healthCheckPath: /health
     envVars:
-      - key: SARVAM_API_KEY
-        sync: false                  # set manually in Render dashboard
+      # Primary LLM (pick any one; auto-fallback uses any that are set)
+      - key: SARVAM_API_KEY          # Sarvam-M (default provider)
+        sync: false
+      - key: ANTHROPIC_API_KEY       # Claude Sonnet 4.5 (highest quality)
+        sync: false
+      - key: OPENAI_API_KEY          # GPT-4o (alternate fallback)
+        sync: false
+      - key: LLM_PROVIDER            # "sarvam" | "anthropic" | "openai"
+        value: "sarvam"
+      # Auth + CORS
       - key: FACTORYGPT_API_KEY
-        generateValue: true          # Render will generate & inject a random key
+        generateValue: true          # Render auto-generates a random key
       - key: ALLOWED_ORIGINS
         sync: false                  # e.g. https://your-app.vercel.app
       - key: PYTHON_VERSION

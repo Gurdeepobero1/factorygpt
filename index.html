@@ -64,6 +64,17 @@ table.lt{width:100%;border-collapse:collapse;font-size:11px}
 .ai-m-body{padding:9px 12px;border-radius:var(--border-radius-md);font-size:12px;line-height:1.65;white-space:pre-wrap}
 .ai-m.usr .ai-m-body{background:#e6f1fb;color:#0c447c}
 .ai-m.bot .ai-m-body{background:var(--color-background-secondary);color:var(--color-text-primary)}
+.ai-m-body h1,.ai-m-body h2,.ai-m-body h3{font-size:12px;font-weight:600;margin:8px 0 4px;color:#111}
+.ai-m-body ul,.ai-m-body ol{padding-left:18px;margin:4px 0}
+.ai-m-body li{margin:2px 0;font-size:12px}
+.ai-m-body p{margin:4px 0}
+.ai-m-body table{border-collapse:collapse;margin:6px 0;font-size:11px;width:100%}
+.ai-m-body th,.ai-m-body td{border:0.5px solid #ddd;padding:4px 6px;text-align:left}
+.ai-m-body th{background:#f0f2f5;font-weight:500}
+.ai-m-body code{background:#f0f2f5;padding:1px 4px;border-radius:3px;font-size:11px}
+.ai-m-body pre{background:#f0f2f5;padding:8px;border-radius:4px;overflow-x:auto;font-size:11px}
+.ai-m-body strong{color:#0c447c}
+.ai-m-body blockquote{border-left:3px solid #185fa5;padding-left:8px;color:#555;margin:4px 0}
 .ai-inp-row{padding:10px 14px;border-top:0.5px solid var(--color-border-tertiary);display:flex;gap:7px;flex-shrink:0}
 .ai-tf{flex:1;font-size:12px;padding:7px 10px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-primary);font-family:var(--font-sans)}
 .btn-ai{padding:7px 14px;background:#185fa5;color:white;border:none;border-radius:var(--border-radius-md);font-size:12px;cursor:pointer;font-family:var(--font-sans);font-weight:500;white-space:nowrap}
@@ -232,29 +243,25 @@ table.lt{width:100%;border-collapse:collapse;font-size:11px}
           </div>
           <div class="multi-cam-grid">
             <div>
-                <div class="cam-header"><span style="color:var(--color-text-secondary)">Node 0 (Worker PPE Check)</span><span id="cam-bdg-0" class="bdg b-red">STANDBY</span></div>
+                <div class="cam-header"><span style="color:var(--color-text-secondary)">Node 0 · PPE Detection</span><span id="cam-bdg-0" class="bdg b-red">STANDBY</span></div>
                 <div class="cam-container">
                     <div id="overlay-0" class="cam-overlay">
-                        <select id="sel-cam-0" class="f-inp" style="margin-bottom:8px; font-size:10px;">
-                            <option value="0">Input: HW Camera 0</option>
-                            <option value="1">Input: HW Camera 1</option>
-                        </select>
-                        <button class="btn-p" onclick="initCamera(0)">Bind & Start</button>
+                        <button class="btn-p" onclick="startBrowserCamera(0)">📷 Enable Webcam</button>
+                        <div style="font-size:9px;color:#aaa;margin-top:6px;text-align:center;">Runs YOLO in your browser<br/>No hardware needed</div>
                     </div>
-                    <img id="cam-feed-0" class="cam-feed">
+                    <video id="video-0" autoplay playsinline muted style="display:none;width:100%;height:100%;object-fit:cover;"></video>
+                    <canvas id="canvas-0" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;"></canvas>
                 </div>
             </div>
             <div>
-                <div class="cam-header"><span style="color:var(--color-text-secondary)">Node 1 (Factory Layout)</span><span id="cam-bdg-1" class="bdg b-red">STANDBY</span></div>
+                <div class="cam-header"><span style="color:var(--color-text-secondary)">Node 1 · Layout Activity</span><span id="cam-bdg-1" class="bdg b-red">STANDBY</span></div>
                 <div class="cam-container">
                     <div id="overlay-1" class="cam-overlay">
-                        <select id="sel-cam-1" class="f-inp" style="margin-bottom:8px; font-size:10px;">
-                            <option value="1">Input: HW Camera 1</option>
-                            <option value="0">Input: HW Camera 0</option>
-                        </select>
-                        <button class="btn-p" onclick="initCamera(1)">Bind & Start</button>
+                        <button class="btn-p" onclick="startBrowserCamera(1)">📷 Enable Webcam</button>
+                        <div style="font-size:9px;color:#aaa;margin-top:6px;text-align:center;">Motion detection<br/>runs locally</div>
                     </div>
-                    <img id="cam-feed-1" class="cam-feed">
+                    <video id="video-1" autoplay playsinline muted style="display:none;width:100%;height:100%;object-fit:cover;"></video>
+                    <canvas id="canvas-1" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;"></canvas>
                 </div>
             </div>
           </div>
@@ -386,6 +393,9 @@ table.lt{width:100%;border-collapse:collapse;font-size:11px}
 
 <script src="config.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js"></script>
 <script>
 document.getElementById('i-date').valueAsDate = new Date();
 
@@ -683,43 +693,307 @@ wsConnect();
   if (saved) { try { FD.alerts = JSON.parse(saved); } catch {} }
 })();
 
-function initCamera(nodeId) {
-  const camIdx = parseInt(document.getElementById(`sel-cam-${nodeId}`).value);
-  const cmd    = { command: "init_node", node: nodeId, camera_index: camIdx };
+// ══════════════════════════════════════════════════════════════════════════════
+// BROWSER-NATIVE EDGE VISION
+// Uses getUserMedia + TensorFlow.js COCO-SSD for person detection,
+// then multi-zone colour heuristics for hard hat + hi-vis vest PPE checks.
+// Works on any deployed site — no hardware camera backend required.
+// ══════════════════════════════════════════════════════════════════════════════
+let cocoModel = null;
+let modelLoadingPromise = null;
 
-  if (ws && ws.readyState === WebSocket.OPEN) {
-    ws.send(JSON.stringify(cmd));
-  } else {
-    wsPendingInits.push(cmd);   // queue for when reconnection succeeds
+async function loadCocoModel() {
+  if (cocoModel) return cocoModel;
+  if (modelLoadingPromise) return modelLoadingPromise;
+  modelLoadingPromise = cocoSsd.load({ base: 'lite_mobilenet_v2' }).then(m => {
+    cocoModel = m;
+    console.log('[Vision] COCO-SSD loaded');
+    return m;
+  });
+  return modelLoadingPromise;
+}
+
+// Kick off model loading in the background so it's ready by the time the user clicks
+loadCocoModel().catch(e => console.warn('[Vision] Model preload failed:', e));
+
+// Per-node runtime state
+const nodeRuntime = {
+  0: { stream: null, raf: null, prevGray: null, lastAlertKey: "", lastAlertTs: 0 },
+  1: { stream: null, raf: null, prevGray: null, lastAlertKey: "", lastAlertTs: 0 }
+};
+
+async function startBrowserCamera(nodeId) {
+  const video   = document.getElementById(`video-${nodeId}`);
+  const canvas  = document.getElementById(`canvas-${nodeId}`);
+  const overlay = document.getElementById(`overlay-${nodeId}`);
+  const badge   = document.getElementById(`cam-bdg-${nodeId}`);
+
+  try {
+    badge.className = "bdg b-amber"; badge.textContent = "REQUESTING…";
+
+    // Request webcam (prefers back camera on mobile, any camera on desktop)
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 } },
+      audio: false
+    });
+    nodeRuntime[nodeId].stream = stream;
+    video.srcObject = stream;
+    video.style.display = "block";
+    canvas.style.display = "block";
+    overlay.style.display = "none";
+
+    await new Promise(r => video.onloadedmetadata = r);
+    canvas.width  = video.videoWidth;
+    canvas.height = video.videoHeight;
+
+    if (nodeId === 0) {
+      badge.textContent = "LOADING AI…";
+      await loadCocoModel();
+      badge.className = "bdg b-green"; badge.textContent = "LIVE · AI";
+      runPPELoop(nodeId);
+    } else {
+      badge.className = "bdg b-green"; badge.textContent = "LIVE · MOTION";
+      runMotionLoop(nodeId);
+    }
+  } catch (err) {
+    console.error('[Vision] Camera error:', err);
+    badge.className = "bdg b-red"; badge.textContent = "DENIED";
+    overlay.style.display = "flex";
+    video.style.display = "none";
+    canvas.style.display = "none";
+    alert(`Camera access failed: ${err.message}\n\nMake sure you granted webcam permission and are using HTTPS (required by browsers).`);
   }
+}
 
-  document.getElementById(`overlay-${nodeId}`).style.display = "none";
-  document.getElementById(`cam-feed-${nodeId}`).style.display = "block";
-  document.getElementById(`cam-bdg-${nodeId}`).textContent = "BINDING…";
-  document.getElementById(`cam-bdg-${nodeId}`).className   = "bdg b-amber";
+// ── PPE detection loop (Node 0) ─────────────────────────────────────────────
+async function runPPELoop(nodeId) {
+  const video  = document.getElementById(`video-${nodeId}`);
+  const canvas = document.getElementById(`canvas-${nodeId}`);
+  const ctx    = canvas.getContext('2d');
+  const rt     = nodeRuntime[nodeId];
+
+  async function frame() {
+    if (!rt.stream) return;
+    try {
+      // Draw video frame to canvas
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      // Detect persons (COCO class index 0 = 'person')
+      const preds = await cocoModel.detect(video, 5, 0.45);
+      const persons = preds.filter(p => p.class === 'person');
+
+      let humanDetected = persons.length > 0;
+      let violations = [];
+
+      for (const p of persons) {
+        const [x, y, w, h] = p.bbox;
+        // Head region: top 25% of bbox
+        const headY = y, headH = Math.max(h * 0.25, 1);
+        // Torso region: 20%-70% of bbox
+        const torsoY = y + h * 0.20, torsoH = h * 0.50;
+
+        const hasHat  = checkPPEColor(ctx, x, headY,  w, headH,  'hat');
+        const hasVest = checkPPEColor(ctx, x, torsoY, w, torsoH, 'vest');
+
+        const issues = [];
+        if (!hasHat)  issues.push("No Hard Hat");
+        if (!hasVest) issues.push("No Hi-Vis Vest");
+
+        const colour = issues.length ? "#ff3333" : "#2ee866";
+        const label  = issues.length ? issues.join(" | ") : `PPE OK ${(p.score*100).toFixed(0)}%`;
+
+        ctx.strokeStyle = colour; ctx.lineWidth = 3;
+        ctx.strokeRect(x, y, w, h);
+        ctx.fillStyle = colour;
+        ctx.font = "14px system-ui, sans-serif";
+        ctx.fillText(label, x + 4, y > 16 ? y - 6 : y + 16);
+
+        if (issues.length) violations.push(...issues);
+      }
+
+      // KPI + badge
+      const kpi = document.getElementById(`kpi-motion-0`);
+      if (kpi) kpi.textContent = humanDetected ? "DETECTED" : "CLEAR";
+      const bdg = document.getElementById(`cam-bdg-0`);
+      if (violations.length) { bdg.className = "bdg b-red";   bdg.textContent = "VIOLATION"; }
+      else if (humanDetected){ bdg.className = "bdg b-amber"; bdg.textContent = "TRACKING"; }
+      else                   { bdg.className = "bdg b-green"; bdg.textContent = "CLEAR"; }
+
+      // Dedup + log alerts
+      if (violations.length) {
+        const uniqIssues = [...new Set(violations)];
+        const alertMsg = "PPE violation: " + uniqIssues.join("; ");
+        const now = Date.now();
+        if (alertMsg !== rt.lastAlertKey || now - rt.lastAlertTs > 60000) {
+          rt.lastAlertKey = alertMsg;
+          rt.lastAlertTs  = now;
+          pushAlertToUI(uniqIssues, alertMsg);
+          logAlertToBackend(0, "ppe_violation", alertMsg);
+        }
+      }
+    } catch (e) {
+      console.warn('[Vision] Frame error:', e);
+    }
+    rt.raf = requestAnimationFrame(frame);
+  }
+  frame();
+}
+
+// ── Motion detection loop (Node 1) ──────────────────────────────────────────
+function runMotionLoop(nodeId) {
+  const video  = document.getElementById(`video-${nodeId}`);
+  const canvas = document.getElementById(`canvas-${nodeId}`);
+  const ctx    = canvas.getContext('2d');
+  const rt     = nodeRuntime[nodeId];
+  const W = canvas.width, H = canvas.height;
+
+  function frame() {
+    if (!rt.stream) return;
+    ctx.drawImage(video, 0, 0, W, H);
+    const img  = ctx.getImageData(0, 0, W, H);
+    const gray = new Uint8ClampedArray(W * H);
+    for (let i = 0, j = 0; i < img.data.length; i += 4, j++) {
+      gray[j] = (img.data[i]*0.299 + img.data[i+1]*0.587 + img.data[i+2]*0.114) | 0;
+    }
+
+    let motionPct = 0;
+    if (rt.prevGray) {
+      let changed = 0;
+      for (let i = 0; i < gray.length; i++) {
+        if (Math.abs(gray[i] - rt.prevGray[i]) > 25) changed++;
+      }
+      motionPct = +(changed / gray.length * 100).toFixed(2);
+
+      ctx.fillStyle = motionPct > 2.0 ? "#2ee866" : "#3266ad";
+      ctx.font = "bold 18px system-ui, sans-serif";
+      ctx.fillText(`Activity: ${motionPct}%`, 12, 28);
+    }
+    rt.prevGray = gray;
+
+    const kpi = document.getElementById(`kpi-motion-1`);
+    if (kpi) kpi.innerHTML = motionPct + "%";
+    const bdg = document.getElementById(`cam-bdg-1`);
+    if (motionPct > 2.0) { bdg.className = "bdg b-green"; bdg.textContent = "ACTIVE"; }
+    else                 { bdg.className = "bdg b-red";   bdg.textContent = "IDLE"; }
+
+    rt.raf = requestAnimationFrame(frame);
+  }
+  frame();
+}
+
+// ── Colour-based PPE check (runs on a sub-rectangle of the canvas) ──────────
+function checkPPEColor(ctx, x, y, w, h, mode) {
+  x = Math.max(0, x|0); y = Math.max(0, y|0);
+  w = Math.max(1, w|0); h = Math.max(1, h|0);
+  if (w < 10 || h < 10) return true;  // too small to assess
+  let data;
+  try { data = ctx.getImageData(x, y, w, h).data; } catch { return true; }
+
+  let hits = 0;
+  const total = w * h;
+  for (let i = 0; i < data.length; i += 4) {
+    const r = data[i], g = data[i+1], b = data[i+2];
+    // Convert to HSV-ish for colour matching
+    const max = Math.max(r,g,b), min = Math.min(r,g,b);
+    const v = max;
+    const s = max === 0 ? 0 : (max - min) / max;
+    let hue = 0;
+    if (max !== min) {
+      if (max === r)      hue = ((g - b) / (max - min)) * 60;
+      else if (max === g) hue = (2 + (b - r) / (max - min)) * 60;
+      else                hue = (4 + (r - g) / (max - min)) * 60;
+    }
+    if (hue < 0) hue += 360;
+
+    if (mode === 'vest') {
+      // Neon yellow-green (hue 50-80, high S, high V) OR hi-vis orange (hue 15-40)
+      if ((hue >= 45 && hue <= 85 && s > 0.45 && v > 150) ||
+          (hue >= 10 && hue <= 40 && s > 0.55 && v > 160)) hits++;
+    } else if (mode === 'hat') {
+      // Hard hats: yellow (40-70), orange (10-35), or white (low S, high V)
+      if ((hue >= 35 && hue <= 70 && s > 0.35 && v > 140) ||
+          (hue >= 8  && hue <= 35 && s > 0.45 && v > 150) ||
+          (s < 0.20 && v > 180)) hits++;
+    }
+  }
+  const threshold = mode === 'vest' ? 0.05 : 0.08;
+  return (hits / total) > threshold;
+}
+
+// ── Alert helpers ──────────────────────────────────────────────────────────
+function pushAlertToUI(issues, fullMsg) {
+  const title = issues.length === 2
+    ? "No Hard Hat & No Hi-Vis Vest"
+    : issues[0] === "No Hard Hat" ? "No Hard Hat Detected"
+    : "No Hi-Vis Vest Detected";
+  FD.alerts.unshift({ lvl: "critical", t: title, d: fullMsg, tm: new Date().toLocaleTimeString() });
+  if (FD.alerts.length > 50) FD.alerts.length = 50;
+  localStorage.setItem('factoryAlerts', JSON.stringify(FD.alerts));
+  renderAlerts();
+}
+
+async function logAlertToBackend(nodeId, alertType, message) {
+  try {
+    const headers = { 'Content-Type': 'application/json' };
+    if (API_KEY_HDR) headers['X-API-Key'] = API_KEY_HDR;
+    await fetch(`${API_BASE}/api/alerts/log`, {
+      method: 'POST', headers,
+      body: JSON.stringify({ node_id: nodeId, alert_type: alertType, message, severity: "critical" })
+    });
+  } catch (e) { console.warn('[Alert log] failed:', e); }
 }
 
 let hist = [];
 async function sendMsg() {
   const inp = document.getElementById('ai-in'); const msg = inp.value.trim(); if(!msg) return;
   inp.value = ''; addMsg('usr', msg); hist.push({role:'user', content:msg});
-  const btn = document.getElementById('send-btn'); btn.disabled = true; btn.textContent = 'Analyzing...';
-  const ld = addMsg('bot', '<span class="spin"></span> Processing...');
-  const avgOee = document.getElementById('top-oee').textContent;
-  
-  const SYS = `You are FactoryGPT, a brutally honest Industry 5.0 AI advisor for ${localStorage.getItem('factoryComp')}. Expose blind spots.
-LIVE CONTEXT: Node 0 (Worker Monitor): ${motionState[0]} (Current PPE Alert: ${lastAlertReceived || 'None'}) | Node 1 (Factory Layout): ${motionState[1]} | Overall OEE: ${avgOee} vs Target: ${TGT_OEE}%.
-INSTRUCTIONS: Maintain conversation continuity. Demand operational queries for greetings. Quantify reasoning.`;
-  
+  const btn = document.getElementById('send-btn'); btn.disabled = true; btn.textContent = 'Analyzing…';
+  const ld = addMsg('bot', '<span class="spin"></span> Thinking through the data…');
+
+  // Build live factory context from current dashboard state
+  const avgOee   = document.getElementById('top-oee').textContent;
+  const totalOut = document.getElementById('top-out').textContent;
+  const facility = localStorage.getItem('factoryComp') || 'this facility';
+  const location = localStorage.getItem('factoryLoc') || 'unknown location';
+  const openAlerts = FD.alerts.filter(a => a.lvl === 'critical').length;
+  const lastPPE = FD.alerts.length ? FD.alerts[0].d : 'No active PPE violations';
+  const workerStats = FD.workers.length
+    ? `${FD.workers.length} workers logged; avg efficiency ${(FD.workers.reduce((s,w)=>s+w.eff,0)/FD.workers.length).toFixed(1)}%; avg fatigue ${(FD.workers.reduce((s,w)=>s+w.fat,0)/FD.workers.length).toFixed(1)}/100`
+    : 'No worker telemetry loaded';
+
+  const liveContext = `
+- **Facility:** ${facility} (${location})
+- **Overall OEE:** ${avgOee} (target ${TGT_OEE}%)
+- **Daily output:** ${totalOut} (target ${TGT_OUT.toLocaleString()})
+- **Production lines tracked:** ${FD.lines.length}
+- **Node 0 (Worker PPE Monitor):** ${motionState[0]}
+- **Node 1 (Layout Activity):** ${motionState[1]}
+- **Open critical alerts:** ${openAlerts}
+- **Latest PPE alert:** ${lastPPE}
+- **Worker telemetry:** ${workerStats}
+`.trim();
+
+  // Minimal UI-side instructions; the heavy lifting is done server-side in ai_brain.py
+  const SYS = `The user is operating the FactoryGPT dashboard for ${facility}.`;
+
   const chatPayload = hist.filter(m => m.role === 'user' || m.role === 'assistant').slice(-10);
   try {
     const aiHeaders = { 'Content-Type': 'application/json', ...(API_KEY_HDR ? { 'X-API-Key': API_KEY_HDR } : {}) };
-    const response = await fetch(`${API_BASE}/api/ai`, { method: 'POST', headers: aiHeaders, body: JSON.stringify({ system_prompt: SYS, messages: chatPayload }) });
+    const response = await fetch(`${API_BASE}/api/ai`, {
+      method: 'POST', headers: aiHeaders,
+      body: JSON.stringify({ system_prompt: SYS, messages: chatPayload, live_context: liveContext })
+    });
     const data = await response.json();
     if (!response.ok) throw new Error(data.detail || "Server failed to respond.");
-    ld.querySelector('.ai-m-body').innerHTML = data.response.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+
+    // Render full markdown (tables, bold, bullets, etc.)
+    const rendered = (window.marked ? marked.parse(data.response) : data.response.replace(/\n/g,'<br>'));
+    const providerTag = data.provider ? `<div style="font-size:9px;color:#888;margin-top:6px;">via ${data.provider}</div>` : '';
+    ld.querySelector('.ai-m-body').innerHTML = rendered + providerTag;
     hist.push({ role: 'assistant', content: data.response });
-  } catch(e) { ld.querySelector('.ai-m-body').innerHTML = `<span style="color:#c0392b; font-weight:bold;">CRITICAL FAILURE:</span><br>${e.message}`; }
+  } catch(e) {
+    ld.querySelector('.ai-m-body').innerHTML = `<span style="color:#c0392b;font-weight:bold;">⚠ AI Brain error</span><br>${e.message}<br><br><span style="font-size:11px;color:#888;">Check Render logs or verify SARVAM_API_KEY / ANTHROPIC_API_KEY / OPENAI_API_KEY is set.</span>`;
+  }
   btn.disabled = false; btn.textContent = 'Analyze ↗';
 }
 
