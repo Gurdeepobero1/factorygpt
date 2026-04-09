@@ -20,7 +20,7 @@ from dotenv import load_dotenv
 
 # ── Environment ───────────────────────────────────────────────────────────────
 load_dotenv()
-SARVAM_API_KEY   = os.getenv("SARVAM_API_KEY", "sk_ry4d2q1k_zmcLaq0SA9AgXUEvbrW28gdG")
+SARVAM_API_KEY   = os.getenv("SARVAM_API_KEY", "")
 DB_PATH          = os.getenv("DB_PATH", "factorygpt.db")
 
 # ── App ───────────────────────────────────────────────────────────────────────
@@ -200,49 +200,25 @@ class Message(BaseModel):
 class AIRequest(BaseModel):
     system_prompt: str
     messages: List[Message]
+    live_context: Optional[str] = None
 
 @app.post("/api/ai")
 async def process_ai_request(req: AIRequest):
-    if not SARVAM_API_KEY or SARVAM_API_KEY == "YOUR_SARVAM_API_KEY_HERE":
-        raise HTTPException(status_code=500, detail="SARVAM_API_KEY not configured in .env file.")
-
-    with get_db() as conn:
-        recent_alerts = conn.execute("SELECT message, timestamp FROM alerts ORDER BY id DESC LIMIT 3").fetchall()
-        alert_str = "\n".join([f"[{r['timestamp']}] {r['message']}" for r in recent_alerts]) if recent_alerts else "No recent alerts."
-
-    context_str = "\n\n".join([f"DATASET AGGREGATES ({k}):\n{v}" for k, v in factory_data_summary.items()]) or "No historical CSV data provided."
-
-    enhanced_system = f"""{req.system_prompt}
-
-CRITICAL SYSTEM CONTEXT:
-Recent Automated Hardware Alerts:
-{alert_str}
-
-STATISTICAL DATABASES:
-{context_str}
-
-INSTRUCTIONS: Be brutally honest. Base all math purely on the aggregated data and recent alerts above."""
-
-    payload = {
-        "model": "sarvam-30b",
-        "messages": [{"role": "system", "content": enhanced_system}] + [{"role": m.role, "content": m.content} for m in req.messages],
-        "temperature": 0.2,
-    }
-
-    # FIX: AsyncClient instantiated safely inside the request event loop
-    async with httpx.AsyncClient(timeout=30.0) as client:
-        try:
-            r = await client.post(
-                "https://api.sarvam.ai/v1/chat/completions",
-                json=payload,
-                headers={"Authorization": f"Bearer {SARVAM_API_KEY}", "Content-Type": "application/json"}
-            )
-            r.raise_for_status()
-            return {"status": "success", "response": r.json()["choices"][0]["message"]["content"]}
-        except httpx.HTTPStatusError as e:
-            raise HTTPException(status_code=502, detail=f"Sarvam API error: {e.response.text}")
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+    from ai_brain import compose_system_prompt, call_brain
+    try:
+        full_system = compose_system_prompt(
+            base_user_prompt=req.system_prompt,
+            factory_data=factory_data_summary,
+            live_context=req.live_context,
+        )
+        text, provider = await call_brain(
+            system_prompt=full_system,
+            messages=[{"role": m.role, "content": m.content} for m in req.messages],
+            temperature=0.3,
+        )
+        return {"status": "success", "response": text, "provider": provider}
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=str(e))
 
 # ── WebSocket / Camera streams ────────────────────────────────────────────────
 @app.websocket("/ws/iot")
