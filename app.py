@@ -27,7 +27,7 @@ ALLOWED_ORIGINS  = os.getenv("ALLOWED_ORIGINS", "*").split(",")  # e.g. "https:/
 DB_PATH          = os.getenv("DB_PATH", "factorygpt.db")
 
 # ── App ───────────────────────────────────────────────────────────────────────
-app = FastAPI(title="FactoryGPT Production API", version="2.0.0")
+app = FastAPI(title="FactoryGPT Production API", version="2.1.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -36,6 +36,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Shared HTTPX Client for connection pooling (massive latency reduction)
+http_client = httpx.AsyncClient(timeout=30.0)
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    await http_client.aclose()
 
 # ── Vision model ──────────────────────────────────────────────────────────────
 print("Initializing YOLOv8 Neural Edge Node...")
@@ -50,7 +57,6 @@ except Exception as e:
 _key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
 async def verify_api_key(key: Optional[str] = Security(_key_header)):
-    """If FACTORYGPT_API_KEY is set in env, every request must supply it."""
     if FACTORYGPT_KEY and key != FACTORYGPT_KEY:
         raise HTTPException(status_code=403, detail="Invalid or missing X-API-Key header.")
     return True
@@ -72,16 +78,6 @@ def init_db():
                 filename    TEXT UNIQUE,
                 uploaded_at TEXT,
                 row_count   INTEGER
-            );
-            CREATE TABLE IF NOT EXISTS production_log (
-                id          INTEGER PRIMARY KEY AUTOINCREMENT,
-                line_name   TEXT,
-                oee         REAL,
-                output      INTEGER,
-                target      INTEGER,
-                downtime    REAL,
-                defects     REAL,
-                logged_at   TEXT
             );
         """)
         conn.commit()
@@ -105,68 +101,51 @@ def log_alert(node_id: int, alert_type: str, message: str):
         )
         conn.commit()
 
-# ── In-memory data store (uploaded CSV context for AI) ───────────────────────
-factory_data_store: dict[str, str] = {}
+# ── In-memory data store (Optimized for AI Context) ───────────────────────────
+# Instead of raw data, we store highly compressed statistical summaries
+factory_data_summary: dict[str, str] = {}
 
 # ── PPE Detection helpers ─────────────────────────────────────────────────────
 def check_hard_hat(head_region: np.ndarray) -> bool:
-    """Detect helmet presence by colour in the head region (top 25 % of bbox)."""
     if head_region.size == 0:
-        return True   # can't assess → assume OK
+        return True 
     hsv  = cv2.cvtColor(head_region, cv2.COLOR_BGR2HSV)
-    # Yellow/lime hard hat
     m1 = cv2.inRange(hsv, np.array([18, 80,  80]), np.array([42, 255, 255]))
-    # Orange hard hat
     m2 = cv2.inRange(hsv, np.array([0,  140, 80]), np.array([18, 255, 255]))
-    # White hard hat (low saturation, high value)
     m3 = cv2.inRange(hsv, np.array([0,   0, 175]), np.array([180, 50, 255]))
     total   = head_region.shape[0] * head_region.shape[1] + 1
     ratio   = (cv2.countNonZero(m1) + cv2.countNonZero(m2) + cv2.countNonZero(m3)) / total
     return ratio > 0.08
 
 def check_hi_vis_vest(torso_region: np.ndarray) -> bool:
-    """Detect high-vis safety vest in the torso region (20–70 % of bbox)."""
     if torso_region.size == 0:
-        return True   # can't assess → assume OK
+        return True
     hsv = cv2.cvtColor(torso_region, cv2.COLOR_BGR2HSV)
-    # Neon yellow-green vest
     m1 = cv2.inRange(hsv, np.array([25, 100, 100]), np.array([75, 255, 255]))
-    # High-vis orange vest
     m2 = cv2.inRange(hsv, np.array([5,  120, 120]), np.array([22, 255, 255]))
     total = torso_region.shape[0] * torso_region.shape[1] + 1
     ratio = (cv2.countNonZero(m1) + cv2.countNonZero(m2)) / total
     return ratio > 0.05
 
 def annotate_ppe(frame: np.ndarray, results) -> tuple[np.ndarray, list[str]]:
-    """
-    Run per-person PPE checks and return annotated frame + list of violation strings.
-    Checks both hard hat AND high-vis vest independently.
-    """
     violations: list[str] = []
     for r in results:
         for box in r.boxes:
             conf = float(box.conf[0])
-            if conf < 0.40:          # skip low-confidence detections
-                continue
+            if conf < 0.40: continue
+            
             x1, y1, x2, y2 = map(int, box.xyxy[0])
             h = y2 - y1
 
-            head_y1  = y1
-            head_y2  = y1 + max(int(h * 0.25), 1)
-            torso_y1 = y1 + int(h * 0.20)
-            torso_y2 = y1 + int(h * 0.70)
-
-            head_region  = frame[head_y1:head_y2,  x1:x2]
-            torso_region = frame[torso_y1:torso_y2, x1:x2]
+            head_region  = frame[y1:y1 + max(int(h * 0.25), 1),  x1:x2]
+            torso_region = frame[y1 + int(h * 0.20):y1 + int(h * 0.70), x1:x2]
 
             has_hat  = check_hard_hat(head_region)
             has_vest = check_hi_vis_vest(torso_region)
 
             issues = []
-            if not has_hat:
-                issues.append("No Hard Hat")
-            if not has_vest:
-                issues.append("No Hi-Vis Vest")
+            if not has_hat: issues.append("No Hard Hat")
+            if not has_vest: issues.append("No Hi-Vis Vest")
 
             if issues:
                 violations.extend(issues)
@@ -177,8 +156,8 @@ def annotate_ppe(frame: np.ndarray, results) -> tuple[np.ndarray, list[str]]:
                 colour = (0, 200, 60)
 
             cv2.rectangle(frame, (x1, y1), (x2, y2), colour, 2)
-            cv2.putText(frame, label, (x1, max(y1 - 8, 10)),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.45, colour, 1, cv2.LINE_AA)
+            cv2.putText(frame, label, (x1, max(y1 - 8, 10)), cv2.FONT_HERSHEY_SIMPLEX, 0.45, colour, 1, cv2.LINE_AA)
+            
     return frame, violations
 
 # ── WebSocket manager ─────────────────────────────────────────────────────────
@@ -224,7 +203,12 @@ async def upload_factory_data(file: UploadFile = File(...)):
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Could not parse file: {e}")
 
-    factory_data_store[file.filename] = df.to_json(orient="records")
+    # AI EFFICIENCY UPGRADE: Do not store raw data. Store statistical aggregates.
+    summary_data = {
+        "metrics_summary": df.describe().to_dict(),
+        "recent_entries": df.tail(5).to_dict(orient="records")
+    }
+    factory_data_summary[file.filename] = json.dumps(summary_data)
 
     with get_db() as conn:
         conn.execute(
@@ -248,11 +232,26 @@ async def process_ai_request(req: AIRequest):
     if not SARVAM_API_KEY:
         raise HTTPException(status_code=500, detail="SARVAM_API_KEY not configured.")
 
+    # Retrieve recent active alerts from DB to automatically inform the AI
+    with get_db() as conn:
+        recent_alerts = conn.execute("SELECT message, timestamp FROM alerts ORDER BY id DESC LIMIT 3").fetchall()
+        alert_str = "\n".join([f"[{r['timestamp']}] {r['message']}" for r in recent_alerts]) if recent_alerts else "No recent alerts."
+
     context_str = "\n\n".join(
-        [f"DATASET ({k}):\n{v}" for k, v in factory_data_store.items()]
+        [f"DATASET AGGREGATES ({k}):\n{v}" for k, v in factory_data_summary.items()]
     ) or "No historical CSV data provided."
 
-    enhanced_system = f"{req.system_prompt}\n\nHISTORICAL & WORKER CONTEXT:\n{context_str}"
+    # Construct the hyper-efficient prompt
+    enhanced_system = f"""{req.system_prompt}
+
+CRITICAL SYSTEM CONTEXT:
+Recent Automated Hardware Alerts:
+{alert_str}
+
+STATISTICAL DATABASES (Aggregated for efficiency):
+{context_str}
+
+INSTRUCTIONS: Base all math and operational logic purely on the aggregated data and recent alerts above."""
 
     payload = {
         "model": "sarvam-30b",
@@ -261,26 +260,24 @@ async def process_ai_request(req: AIRequest):
         "temperature": 0.2,
     }
 
-    async with httpx.AsyncClient(timeout=30.0) as client:
-        try:
-            r = await client.post(
-                "https://api.sarvam.ai/v1/chat/completions",
-                json=payload,
-                headers={"Authorization": f"Bearer {SARVAM_API_KEY}", "Content-Type": "application/json"},
-            )
-            r.raise_for_status()
-            return {"status": "success", "response": r.json()["choices"][0]["message"]["content"]}
-        except httpx.HTTPStatusError as e:
-            raise HTTPException(status_code=502, detail=f"Sarvam API error: {e.response.text}")
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+    try:
+        r = await http_client.post(
+            "https://api.sarvam.ai/v1/chat/completions",
+            json=payload,
+            headers={"Authorization": f"Bearer {SARVAM_API_KEY}", "Content-Type": "application/json"}
+        )
+        r.raise_for_status()
+        return {"status": "success", "response": r.json()["choices"][0]["message"]["content"]}
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(status_code=502, detail=f"Sarvam API error: {e.response.text}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/alerts", dependencies=[Depends(verify_api_key)])
 async def get_alerts(limit: int = 100, unresolved_only: bool = False):
     with get_db() as conn:
         query = "SELECT * FROM alerts"
-        if unresolved_only:
-            query += " WHERE resolved = 0"
+        if unresolved_only: query += " WHERE resolved = 0"
         query += f" ORDER BY id DESC LIMIT {limit}"
         rows = conn.execute(query).fetchall()
     return {"alerts": [dict(r) for r in rows]}
@@ -291,22 +288,6 @@ async def resolve_alert(alert_id: int):
         conn.execute("UPDATE alerts SET resolved = 1 WHERE id = ?", (alert_id,))
         conn.commit()
     return {"status": "resolved", "id": alert_id}
-
-@app.get("/api/stats", dependencies=[Depends(verify_api_key)])
-async def get_stats():
-    with get_db() as conn:
-        total_alerts   = conn.execute("SELECT COUNT(*) FROM alerts").fetchone()[0]
-        open_alerts    = conn.execute("SELECT COUNT(*) FROM alerts WHERE resolved=0").fetchone()[0]
-        datasets_count = conn.execute("SELECT COUNT(*) FROM datasets").fetchone()[0]
-        recent_alerts  = conn.execute(
-            "SELECT alert_type, COUNT(*) as cnt FROM alerts GROUP BY alert_type ORDER BY cnt DESC LIMIT 5"
-        ).fetchall()
-    return {
-        "total_alerts":   total_alerts,
-        "open_alerts":    open_alerts,
-        "datasets_loaded": datasets_count,
-        "top_alert_types": [dict(r) for r in recent_alerts],
-    }
 
 # ── WebSocket / Camera streams ────────────────────────────────────────────────
 @app.websocket("/ws/iot")
@@ -331,17 +312,17 @@ async def websocket_endpoint(ws: WebSocket):
         manager.disconnect(ws)
 
 async def process_ppe_stream(node_id: int, camera_index: int):
-    """Node 0 — multi-zone PPE detection (hard hat + hi-vis vest)."""
-    if vision_model is None:
-        return
+    if vision_model is None: return
     cap = cv2.VideoCapture(camera_index)
     last_alert_msg = ""
     try:
         while True:
             await asyncio.sleep(0.1)
-            if not manager.active:
-                continue
-            ret, frame = cap.read()
+            if not manager.active: continue
+            
+            # Unblock ASGI event loop by executing hardware read in thread
+            ret, frame = await asyncio.to_thread(cap.read)
+            
             if not ret:
                 await asyncio.sleep(1.0)
                 continue
@@ -362,7 +343,7 @@ async def process_ppe_stream(node_id: int, camera_index: int):
             _, buf = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 75])
             await manager.broadcast(json.dumps({
                 "node_id":    node_id,
-                "timestamp":  datetime.now().strftime("%H:%M:%S"),
+                "timestamp":  datetime.utcnow().strftime("%H:%M:%S"),
                 "motion_pct": 100 if human_detected else 0,
                 "image":      base64.b64encode(buf).decode(),
                 "alert":      alert_msg,
@@ -371,15 +352,16 @@ async def process_ppe_stream(node_id: int, camera_index: int):
         cap.release()
 
 async def process_motion_stream(node_id: int, camera_index: int):
-    """Node 1 — motion activity percentage."""
     cap = cv2.VideoCapture(camera_index)
     prev_gray = None
     try:
         while True:
             await asyncio.sleep(0.1)
-            if not manager.active:
-                continue
-            ret, frame = cap.read()
+            if not manager.active: continue
+            
+            # Unblock ASGI event loop
+            ret, frame = await asyncio.to_thread(cap.read)
+            
             if not ret:
                 await asyncio.sleep(1.0)
                 continue
@@ -400,7 +382,7 @@ async def process_motion_stream(node_id: int, camera_index: int):
             _, buf = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 75])
             await manager.broadcast(json.dumps({
                 "node_id":    node_id,
-                "timestamp":  datetime.now().strftime("%H:%M:%S"),
+                "timestamp":  datetime.utcnow().strftime("%H:%M:%S"),
                 "motion_pct": motion_pct,
                 "image":      base64.b64encode(buf).decode(),
                 "alert":      None,
