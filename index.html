@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FactoryGPT AI Manufacturing Platform</title>
+<style>
+:root{--color-background-primary:#fff;--color-background-secondary:#f8f9fa;--color-border-secondary:#ddd;--color-border-tertiary:#eee;--color-text-primary:#111;--color-text-secondary:#555;--color-text-tertiary:#888;--border-radius-md:6px;--border-radius-lg:10px;--font-sans:system-ui,-apple-system,sans-serif}
+body{font-family:var(--font-sans);background:#f0f2f5;padding:20px;color:var(--color-text-primary); margin:0;}
+*{box-sizing:border-box;margin:0;padding:0}
+.fg{display:flex;min-height:640px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden;background:var(--color-background-primary)}
+.fg-side{width:196px;background:var(--color-background-secondary);border-right:0.5px solid var(--color-border-tertiary);display:flex;flex-direction:column;flex-shrink:0; justify-content: space-between;}
+.fg-logo{padding:12px 14px;border-bottom:0.5px solid var(--color-border-tertiary)}
+.fg-logo-name{font-size:15px;font-weight:500;color:var(--color-text-primary);letter-spacing:-0.01em}
+.fg-logo-tag{font-size:10px;color:var(--color-text-tertiary);margin-top:1px}
+.fg-nav{flex:1;padding:6px 0}
+.fn{display:flex;align-items:center;gap:8px;padding:8px 14px;font-size:12px;color:var(--color-text-secondary);cursor:pointer;border-left:2px solid transparent;user-select:none}
+.fn:hover{color:var(--color-text-primary);background:var(--color-background-primary)}
+.fn.active{color:var(--color-text-primary);font-weight:500;border-left-color:#3266ad;background:var(--color-background-primary)}
+.fn-ic{width:16px;text-align:center;font-size:13px}
+.fg-foot{padding:10px 14px;border-top:0.5px solid var(--color-border-tertiary)}
+.live-row{display:flex;align-items:center;gap:5px;font-size:11px;color:#2d9a5f;font-weight:500;margin-bottom:3px}
+.live-dot{width:6px;height:6px;border-radius:50%;background:#2d9a5f;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.fg-foot-sub{font-size:10px;color:var(--color-text-tertiary)}
+.fg-main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.fg-top{padding:9px 18px;border-bottom:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.fg-top-t{font-size:14px;font-weight:500;color:var(--color-text-primary)}
+.fg-top-s{font-size:11px;color:var(--color-text-secondary);margin-top:1px}
+.bdg{font-size:10px;padding:3px 9px;border-radius:9px;font-weight:500}
+.b-blue{background:#e6f1fb;color:#185fa5}
+.b-green{background:#eaf3de;color:#3b6d11}
+.b-amber{background:#faeeda;color:#854f0b}
+.b-red{background:#fcebeb;color:#a32d2d}
+.fg-panel{flex:1;overflow-y:auto;padding:14px 18px}
+.hidden{display:none!important}
+.kpi-g{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:14px}
+.kpi-c{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:11px 13px}
+.kpi-l{font-size:10px;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px}
+.kpi-v{font-size:23px;font-weight:500;color:var(--color-text-primary);line-height:1}
+.kpi-u{font-size:12px;font-weight:400;color:var(--color-text-secondary)}
+.kpi-d{font-size:10px;margin-top:4px}
+.d-up{color:#2d9a5f}.d-dn{color:#c0392b}
+.cr{display:grid;grid-template-columns:2fr 1fr;gap:10px;margin-bottom:12px}
+.cr2{display:grid;grid-template-columns:3fr 2fr;gap:10px;margin-bottom:12px}
+.cc{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:13px 15px}
+.cc-hd{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.cc-t{font-size:13px;font-weight:500;color:var(--color-text-primary)}
+.cc-s{font-size:11px;color:var(--color-text-secondary);margin-top:1px}
+table.lt{width:100%;border-collapse:collapse;font-size:11px}
+.lt th{text-align:left;padding:5px 7px;font-size:10px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.04em;border-bottom:0.5px solid var(--color-border-tertiary)}
+.lt td{padding:7px 7px;color:var(--color-text-primary);border-bottom:0.5px solid var(--color-border-tertiary)}
+.lt tr:last-child td{border-bottom:none}
+.ob{height:4px;background:var(--color-background-secondary);border-radius:2px;width:70px;display:inline-block;vertical-align:middle}
+.obi{height:4px;border-radius:2px}
+.ai-wrap{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden;display:flex;flex-direction:column;height:470px}
+.ai-hd{padding:9px 14px;border-bottom:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary);display:flex;align-items:center;gap:9px;flex-shrink:0}
+.ai-av{width:26px;height:26px;border-radius:50%;background:#e6f1fb;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;color:#185fa5}
+.ai-msgs{flex:1;overflow-y:auto;padding:13px;display:flex;flex-direction:column;gap:10px}
+.ai-m{max-width:88%}
+.ai-m.usr{align-self:flex-end}
+.ai-m.bot{align-self:flex-start}
+.ai-m-lbl{font-size:10px;color:var(--color-text-tertiary);margin-bottom:3px;font-weight:500}
+.ai-m-body{padding:9px 12px;border-radius:var(--border-radius-md);font-size:12px;line-height:1.65;white-space:pre-wrap}
+.ai-m.usr .ai-m-body{background:#e6f1fb;color:#0c447c}
+.ai-m.bot .ai-m-body{background:var(--color-background-secondary);color:var(--color-text-primary)}
+.ai-inp-row{padding:10px 14px;border-top:0.5px solid var(--color-border-tertiary);display:flex;gap:7px;flex-shrink:0}
+.ai-tf{flex:1;font-size:12px;padding:7px 10px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-primary);font-family:var(--font-sans)}
+.btn-ai{padding:7px 14px;background:#185fa5;color:white;border:none;border-radius:var(--border-radius-md);font-size:12px;cursor:pointer;font-family:var(--font-sans);font-weight:500;white-space:nowrap}
+.btn-ai:hover{background:#0c447c}
+.btn-reset{padding:8px 14px;background:#e24b4a;color:white;border:none;border-radius:var(--border-radius-md);font-size:11px;cursor:pointer;font-family:var(--font-sans);font-weight:500; width:100%; margin-bottom:10px;}
+.btn-reset:hover{background:#c0392b}
+.qp{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px}
+.qb{font-size:11px;padding:4px 11px;border:0.5px solid var(--color-border-secondary);border-radius:11px;cursor:pointer;background:var(--color-background-secondary);color:var(--color-text-secondary);font-family:var(--font-sans)}
+.qb:hover{background:var(--color-background-primary);color:var(--color-text-primary)}
+.tw-g{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.tw-sec-t{font-size:13px;font-weight:500;color:var(--color-text-primary);margin-bottom:14px;padding-bottom:8px;border-bottom:0.5px solid var(--color-border-tertiary)}
+.sl-g{margin-bottom:12px}
+.sl-l{font-size:11px;color:var(--color-text-secondary);display:flex;justify-content:space-between;margin-bottom:5px}
+.sl-v{font-weight:500;color:var(--color-text-primary)}
+.rm{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:9px 11px;margin-bottom:7px;display:flex;justify-content:space-between;align-items:center}
+.rm-l{font-size:11px;color:var(--color-text-secondary)}
+.rm-v{font-size:17px;font-weight:500;color:var(--color-text-primary)}
+.rm-d{font-size:10px;margin-top:1px}
+.twin-out{margin-top:10px;font-size:11px;color:var(--color-text-secondary);background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:9px 11px;line-height:1.6;white-space:pre-wrap;min-height:56px}
+.btn-tw{width:100%;margin-top:10px;padding:9px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);font-size:12px;cursor:pointer;color:var(--color-text-primary);font-family:var(--font-sans)}
+.btn-tw:hover{background:var(--color-background-primary)}
+.wk-g{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.wk-c{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:12px 14px}
+.wk-hd{display:flex;align-items:center;gap:9px;margin-bottom:11px}
+.wk-av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500}
+.wk-n{font-size:12px;font-weight:500;color:var(--color-text-primary)}
+.wk-r{font-size:10px;color:var(--color-text-secondary)}
+.ws{display:flex;justify-content:space-between;margin-bottom:4px}
+.wsl{font-size:10px;color:var(--color-text-secondary)}
+.wsv{font-size:10px;font-weight:500;color:var(--color-text-primary)}
+.pb{height:3px;background:var(--color-background-secondary);border-radius:2px;margin-bottom:7px}
+.pbi{height:3px;border-radius:2px}
+.al-list{display:flex;flex-direction:column}
+.al-item{display:flex;gap:11px;padding:11px 0;border-bottom:0.5px solid var(--color-border-tertiary)}
+.al-item:last-child{border-bottom:none}
+.al-dot{width:7px;height:7px;border-radius:50%;margin-top:4px;flex-shrink:0}
+.al-t{font-size:12px;font-weight:500;color:var(--color-text-primary);margin-bottom:3px}
+.al-d{font-size:11px;color:var(--color-text-secondary);line-height:1.5}
+.al-m{font-size:10px;color:var(--color-text-tertiary);margin-top:3px}
+.spin{display:inline-block;width:11px;height:11px;border:1.5px solid var(--color-border-secondary);border-top-color:#185fa5;border-radius:50%;animation:rot .7s linear infinite;vertical-align:middle;margin-right:5px}
+@keyframes rot{to{transform:rotate(360deg)}}
+.up-z{border:1px dashed var(--color-border-secondary);border-radius:var(--border-radius-lg);padding:24px 18px;text-align:center;cursor:pointer;margin-bottom:18px}
+.up-z:hover{background:var(--color-background-secondary)}
+.up-t{font-size:13px;font-weight:500;color:var(--color-text-primary);margin-bottom:4px}
+.up-s{font-size:11px;color:var(--color-text-secondary)}
+.fg-g{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.f-grp{margin-bottom:11px}
+.f-lbl{font-size:11px;color:var(--color-text-secondary);display:block;margin-bottom:4px}
+.f-inp{width:100%;font-size:12px;padding:6px 9px;border:1px solid #ddd; border-radius:4px;}
+.btn-p{padding:7px 18px;background:#185fa5;color:white;border:none;border-radius:var(--border-radius-md);font-size:12px;cursor:pointer;font-family:var(--font-sans);font-weight:500; width:100%}
+.btn-p:hover{background:#0c447c}
+.sec-h{font-size:13px;font-weight:500;color:var(--color-text-primary);margin-bottom:11px;padding-bottom:7px;border-bottom:0.5px solid var(--color-border-tertiary)}
+
+/* MULTI-CAMERA UI */
+.multi-cam-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.cam-container { background: #111; border-radius: var(--border-radius-md); overflow: hidden; position: relative; height: 135px; }
+.cam-feed { width: 100%; height: 100%; object-fit: cover; display: none; }
+.cam-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; font-size: 11px; font-weight: 500; }
+.cam-overlay { position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.7); display:flex; flex-direction:column; align-items:center; justify-content:center; padding:15px; z-index:10; }
+
+/* CONFIGURATOR MODAL */
+.modal-overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.8); z-index:9999; display:flex; align-items:center; justify-content:center; }
+.modal-box { background:#fff; padding:30px; border-radius:var(--border-radius-lg); width:580px; box-shadow:0 10px 25px rgba(0,0,0,0.2); }
+.modal-title { font-size:18px; font-weight:bold; margin-bottom:10px; color:#111; }
+.modal-sub { font-size:12px; color:#555; margin-bottom:20px; line-height:1.5; }
+</style>
+</head>
+<body>
+
+<div class="modal-overlay" id="config-modal">
+    <div class="modal-box">
+        <div class="modal-title">Initialize Factory Platform</div>
+        <div class="modal-sub">Define your workspace parameters and upload telemetry to dynamically generate the dashboard.</div>
+        
+        <div style="display:flex; gap:10px;">
+            <div class="f-grp" style="flex:1;">
+                <label class="f-lbl">Company Name</label>
+                <input type="text" id="conf-company" class="f-inp" placeholder="e.g. Oberoi Industries">
+            </div>
+            <div class="f-grp" style="flex:1;">
+                <label class="f-lbl">Facility Location</label>
+                <input type="text" id="conf-location" class="f-inp" placeholder="e.g. Jabalpur, MP">
+            </div>
+        </div>
+        
+        <div style="display:flex; gap:10px;">
+            <div class="f-grp" style="flex:1;">
+                <label class="f-lbl">Target OEE (%)</label>
+                <input type="number" id="conf-target-oee" class="f-inp" placeholder="e.g. 85">
+            </div>
+            <div class="f-grp" style="flex:1;">
+                <label class="f-lbl">Target Daily Throughput</label>
+                <input type="number" id="conf-target-out" class="f-inp" placeholder="e.g. 10000">
+            </div>
+        </div>
+
+        <div style="display:flex; gap:10px; margin-bottom:20px;">
+            <div class="f-grp" style="flex:1; border:1px dashed #ccc; padding:10px; border-radius:6px; background:#fafafa;">
+                <label class="f-lbl">Production Telemetry (CSV)</label>
+                <span style="font-size:9px; color:#888; display:block; margin-bottom:5px;">LineName, OEE, Output, Target, Downtime, Defects</span>
+                <input type="file" id="conf-file" accept=".csv" style="font-size:11px; width:100%;">
+            </div>
+            <div class="f-grp" style="flex:1; border:1px dashed #ccc; padding:10px; border-radius:6px; background:#fafafa;">
+                <label class="f-lbl">Worker Telemetry (CSV)</label>
+                <span style="font-size:9px; color:#888; display:block; margin-bottom:5px;">Initials, Name, Role, Line, Efficiency, Hours, Fatigue</span>
+                <input type="file" id="conf-worker-file" accept=".csv" style="font-size:11px; width:100%;">
+            </div>
+        </div>
+
+        <button class="btn-p" id="btn-deploy" onclick="saveConfig()">Deploy Workspace</button>
+    </div>
+</div>
+
+<div class="fg">
+  <nav class="fg-side">
+    <div>
+        <div class="fg-logo">
+          <div class="fg-logo-name" id="ui-company-name">FactoryGPT</div>
+          <div class="fg-logo-tag">Industry 5.0 AI Platform</div>
+        </div>
+        <div class="fg-nav">
+          <div class="fn active" data-p="dash"><span class="fn-ic">▦</span>Dashboard</div>
+          <div class="fn" data-p="data"><span class="fn-ic">⊞</span>Data Input</div>
+          <div class="fn" data-p="ai"><span class="fn-ic">◈</span>AI Brain</div>
+          <div class="fn" data-p="twin"><span class="fn-ic">◫</span>Digital Twin</div>
+          <div class="fn" data-p="work"><span class="fn-ic">◉</span>Workers</div>
+          <div class="fn" data-p="alrt"><span class="fn-ic">⊙</span>Alerts<span class="bdg b-red" id="alert-badge" style="margin-left:auto;font-size:9px;padding:1px 5px;">0</span></div>
+        </div>
+    </div>
+    
+    <div class="fg-foot" style="display: flex; flex-direction: column;">
+      <button class="btn-reset" onclick="resetWorkspace()">⟲ Reset Workspace</button>
+      <div class="live-row"><span class="live-dot"></span><span id="ws-status">Connecting Edge...</span></div>
+      <div class="fg-foot-sub" id="ui-facility-loc">Facility Unconfigured</div>
+    </div>
+  </nav>
+
+  <div class="fg-main">
+    <div class="fg-top">
+      <div>
+        <div class="fg-top-t" id="tb-title">Production Dashboard</div>
+        <div class="fg-top-s">Dynamic Hardware Stream Configuration</div>
+      </div>
+      <div style="display:flex;gap:6px;">
+        <span class="bdg b-green">System Online</span>
+      </div>
+    </div>
+
+    <div id="p-dash" class="fg-panel">
+      <div class="kpi-g">
+        <div class="kpi-c"><div class="kpi-l">Node 0 Status</div><div class="kpi-v" id="kpi-motion-0" style="font-size:18px;">IDLE</div><div class="kpi-d">Worker Safety Monitor</div></div>
+        <div class="kpi-c"><div class="kpi-l">Node 1 Activity</div><div class="kpi-v" id="kpi-motion-1">--<span class="kpi-u">%</span></div><div class="kpi-d">Factory Layout Monitor</div></div>
+        <div class="kpi-c"><div class="kpi-l">Overall OEE</div><div class="kpi-v" id="top-oee">0.0<span class="kpi-u">%</span></div><div class="kpi-d" id="top-oee-sub">Target: --%</div></div>
+        <div class="kpi-c"><div class="kpi-l">Daily Throughput</div><div class="kpi-v" id="top-out">0<span class="kpi-u"> units</span></div><div class="kpi-d" id="top-out-sub">Target: --</div></div>
+      </div>
+      
+      <div class="cr">
+        <div class="cc">
+          <div class="cc-hd"><div><div class="cc-t">Production output — 30 day trend</div><div class="cc-s">Units/day vs Target</div></div></div>
+          <div style="position:relative;height:165px"><canvas id="c-trend"></canvas></div>
+        </div>
+        
+        <div class="cc">
+          <div class="cc-hd">
+            <div><div class="cc-t">Distributed Edge Vision</div><div class="cc-s">Hardware Mapping Required</div></div>
+          </div>
+          <div class="multi-cam-grid">
+            <div>
+                <div class="cam-header"><span style="color:var(--color-text-secondary)">Node 0 (Worker PPE Check)</span><span id="cam-bdg-0" class="bdg b-red">STANDBY</span></div>
+                <div class="cam-container">
+                    <div id="overlay-0" class="cam-overlay">
+                        <select id="sel-cam-0" class="f-inp" style="margin-bottom:8px; font-size:10px;">
+                            <option value="0">Input: HW Camera 0</option>
+                            <option value="1">Input: HW Camera 1</option>
+                        </select>
+                        <button class="btn-p" onclick="initCamera(0)">Bind & Start</button>
+                    </div>
+                    <img id="cam-feed-0" class="cam-feed">
+                </div>
+            </div>
+            <div>
+                <div class="cam-header"><span style="color:var(--color-text-secondary)">Node 1 (Factory Layout)</span><span id="cam-bdg-1" class="bdg b-red">STANDBY</span></div>
+                <div class="cam-container">
+                    <div id="overlay-1" class="cam-overlay">
+                        <select id="sel-cam-1" class="f-inp" style="margin-bottom:8px; font-size:10px;">
+                            <option value="1">Input: HW Camera 1</option>
+                            <option value="0">Input: HW Camera 0</option>
+                        </select>
+                        <button class="btn-p" onclick="initCamera(1)">Bind & Start</button>
+                    </div>
+                    <img id="cam-feed-1" class="cam-feed">
+                </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="cr2">
+        <div class="cc">
+          <div class="cc-t" style="margin-bottom:9px">Production line status</div>
+          <table class="lt"><thead><tr><th>Line</th><th>OEE</th><th>Output / Target</th><th>Downtime</th><th>Defects</th><th>Status</th></tr></thead><tbody id="lt-body"></tbody></table>
+        </div>
+        <div class="cc">
+          <div class="cc-hd"><div><div class="cc-t">OEE by production line</div><div class="cc-s">World-class: 85%+</div></div></div>
+          <div style="position:relative;height:175px"><canvas id="c-oee"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="p-data" class="fg-panel hidden">
+      <div class="sec-h">Manual entry — Dynamic OEE Log</div>
+      <div class="fg-g">
+        <div>
+          <div class="f-grp"><label class="f-lbl">Custom Line Name</label><input class="f-inp" type="text" id="i-line" placeholder="e.g. CNC Station 4"></div>
+          <div class="f-grp"><label class="f-lbl">Units produced</label><input class="f-inp" type="number" id="i-units" placeholder="e.g. 1240"></div>
+          <div class="f-grp"><label class="f-lbl">Planned time (hrs)</label><input class="f-inp" type="number" id="i-plan" placeholder="e.g. 8"></div>
+          <div class="f-grp"><label class="f-lbl">Run time (hrs)</label><input class="f-inp" type="number" id="i-run" placeholder="e.g. 6.5"></div>
+        </div>
+        <div>
+          <div class="f-grp"><label class="f-lbl">Defective units</label><input class="f-inp" type="number" id="i-def" placeholder="e.g. 15"></div>
+          <div class="f-grp"><label class="f-lbl">Ideal cycle time (sec/unit)</label><input class="f-inp" type="number" id="i-cyc" placeholder="e.g. 18"></div>
+          <div class="f-grp"><label class="f-lbl">Downtime reason</label><select class="f-inp"><option>Unplanned maintenance</option><option>Material shortage</option></select></div>
+          <div class="f-grp"><label class="f-lbl">Shift date</label><input class="f-inp" type="date" id="i-date"></div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:4px">
+        <button class="btn-p" style="width:auto" onclick="doSave()">Calculate & Append Machine to Dashboard</button>
+        <span id="oee-out" style="font-size:12px;color:var(--color-text-secondary)"></span>
+      </div>
+
+      <div class="sec-h" style="margin-top:28px;">Manual entry — Worker Telemetry Log</div>
+      <div class="fg-g">
+        <div>
+          <div class="f-grp"><label class="f-lbl">Worker Initials & Name</label>
+             <div style="display:flex;gap:5px;">
+                 <input class="f-inp" type="text" id="w-ini" placeholder="e.g. AR" style="width:60px;">
+                 <input class="f-inp" type="text" id="w-name" placeholder="e.g. Ana R." style="flex:1;">
+             </div>
+          </div>
+          <div class="f-grp"><label class="f-lbl">Role & Line</label>
+             <div style="display:flex;gap:5px;">
+                 <input class="f-inp" type="text" id="w-role" placeholder="e.g. Assembly Tech" style="flex:1;">
+                 <input class="f-inp" type="text" id="w-line" placeholder="e.g. L2" style="width:80px;">
+             </div>
+          </div>
+        </div>
+        <div>
+          <div class="f-grp"><label class="f-lbl">Efficiency (%) & Hours Worked</label>
+             <div style="display:flex;gap:5px;">
+                 <input class="f-inp" type="number" id="w-eff" placeholder="e.g. 85" style="flex:1;">
+                 <input class="f-inp" type="number" id="w-hrs" placeholder="e.g. 40" style="flex:1;">
+             </div>
+          </div>
+          <div class="f-grp"><label class="f-lbl">Fatigue Index (0-100)</label>
+             <input class="f-inp" type="number" id="w-fat" placeholder="e.g. 35">
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:4px">
+        <button class="btn-p" style="width:auto" onclick="doSaveWorker()">Append Worker to Dashboard</button>
+        <span id="wk-out" style="font-size:12px;color:var(--color-text-secondary)"></span>
+      </div>
+    </div>
+
+    <div id="p-ai" class="fg-panel hidden" style="padding:14px 18px;">
+      <div style="margin-bottom:10px">
+        <div class="sec-h" style="margin-bottom:7px;border:none;">Quick analysis prompts</div>
+        <div class="qp">
+          <button class="qb" onclick="sq('Review the Node 0 camera. Is the worker wearing proper safety gear?')">Check Worker Safety Gear</button>
+          <button class="qb" onclick="sq('What are the top bottlenecks costing us the most money today? Quantify each.')">Top bottlenecks</button>
+          <button class="qb" onclick="sq('Analyze the worker fatigue index and correlate it to machine performance.')">Worker Fatigue Impact</button>
+        </div>
+      </div>
+      <div class="ai-wrap">
+        <div class="ai-hd">
+          <div class="ai-av">AI</div>
+          <div><div style="font-size:12px;font-weight:500;color:var(--color-text-primary)">FactoryGPT Brain</div></div>
+          <span class="bdg b-blue" style="margin-left:auto">Stateful Chat Active</span>
+        </div>
+        <div class="ai-msgs" id="ai-msgs">
+          <div class="ai-m bot"><div class="ai-m-lbl">FactoryGPT</div><div class="ai-m-body">I have full conversational memory and live hardware context. I am your direct, unfiltered advisor. Ask me anything.</div></div>
+        </div>
+        <div class="ai-inp-row">
+          <input class="ai-tf" id="ai-in" placeholder="Ask anything about your factory..." onkeydown="if(event.key==='Enter')sendMsg()">
+          <button class="btn-ai" id="send-btn" onclick="sendMsg()">Analyze ↗</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="p-twin" class="fg-panel hidden">
+      <div class="sec-h">What-if scenario simulator</div>
+      <div class="tw-g">
+        <div class="cc">
+          <div class="tw-sec-t">Scenario parameters</div>
+          <div class="sl-g"><div class="sl-l">Machine speed <span class="sl-v" id="sv-sp">100%</span></div><input type="range" min="60" max="140" value="100" step="1" id="sl-sp" oninput="upTwin()"></div>
+          <div class="sl-g"><div class="sl-l">Worker count <span class="sl-v" id="sv-wk">6</span></div><input type="range" min="2" max="12" value="6" step="1" id="sl-wk" oninput="upTwin()"></div>
+          <div class="sl-g"><div class="sl-l">Maintenance freq <span class="sl-v" id="sv-mn">monthly</span></div><input type="range" min="1" max="4" value="2" step="1" id="sl-mn" oninput="upTwin()"></div>
+          <button class="btn-tw" onclick="runTwinAI()"><span id="tw-ld" style="display:none"><span class="spin"></span></span>Run AI scenario analysis ↗</button>
+        </div>
+        <div class="cc">
+          <div class="tw-sec-t">Projected outcomes</div>
+          <div class="rm"><span class="rm-l">Simulated OEE</span><div style="text-align:right"><div class="rm-v" id="sim-oee">0.0%</div><div class="rm-d" id="sim-oee-d" style="color:var(--color-text-secondary)">baseline</div></div></div>
+          <div class="rm"><span class="rm-l">Daily throughput</span><div style="text-align:right"><div class="rm-v" id="sim-out">0</div><div class="rm-d" id="sim-out-d" style="color:var(--color-text-secondary)">baseline</div></div></div>
+          <div class="twin-out" id="twin-out">Adjust parameters and click "Run AI scenario analysis" for strategic assessment.</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="p-work" class="fg-panel hidden">
+      <div class="sec-h">Worker performance & wellbeing — Industry 5.0</div>
+      <div class="wk-g" id="wk-g"></div>
+    </div>
+
+    <div id="p-alrt" class="fg-panel hidden">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div class="sec-h" style="margin:0;border:0;padding:0">Active alerts</div><span class="bdg b-red" id="alert-top-badge">0 Critical</span></div>
+      <div class="al-list" id="al-list"></div>
+    </div>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+document.getElementById('i-date').valueAsDate = new Date();
+
+// --- DYNAMIC STATE ENGINE ---
+let FD = { lines: [], trend: { lbl: [], out: [] }, workers: [], alerts: [] };
+let TGT_OEE = 85; let TGT_OUT = 10000;
+let trendChartInst = null; let oeeChartInst = null;
+const COLOR_POOL = [{bg:"#e6f1fb", tc:"#185fa5"}, {bg:"#eaf3de", tc:"#3b6d11"}, {bg:"#faeeda", tc:"#854f0b"}, {bg:"#fcebeb", tc:"#a32d2d"}];
+
+// --- WORKSPACE RESET ---
+function resetWorkspace() {
+    if(confirm("Are you sure you want to reset the workspace? This will clear all data and hardware configurations.")) {
+        localStorage.clear();
+        location.reload();
+    }
+}
+
+// --- CONFIGURATOR LOGIC ---
+document.addEventListener("DOMContentLoaded", () => {
+    if(!localStorage.getItem('factoryConfigured')) {
+        document.getElementById('config-modal').style.display = 'flex';
+    } else {
+        loadConfig();
+    }
+});
+
+async function saveConfig() {
+    const comp = document.getElementById('conf-company').value || "Unnamed Corp";
+    const loc = document.getElementById('conf-location').value || "Unknown Location";
+    TGT_OEE = parseInt(document.getElementById('conf-target-oee').value) || 85;
+    TGT_OUT = parseInt(document.getElementById('conf-target-out').value) || 10000;
+    
+    localStorage.setItem('factoryConfigured', 'true');
+    localStorage.setItem('factoryComp', comp);
+    localStorage.setItem('factoryLoc', loc);
+    localStorage.setItem('factoryTargetOee', TGT_OEE);
+    localStorage.setItem('factoryTargetOut', TGT_OUT);
+
+    const fileInput = document.getElementById('conf-file').files[0];
+    const workerFileInput = document.getElementById('conf-worker-file').files[0];
+    
+    document.getElementById('btn-deploy').innerHTML = '<span class="spin"></span> Processing Memory...';
+    
+    const uploadHeaders = API_KEY_HDR ? { "X-API-Key": API_KEY_HDR } : {};
+
+    if (fileInput) {
+        const formData = new FormData(); formData.append("file", fileInput);
+        try { await fetch(`${API_BASE}/api/upload`, { method: 'POST', body: formData, headers: uploadHeaders }); } catch(e){}
+        const text = await fileInput.text(); parseCSVToState(text);
+    }
+
+    if (workerFileInput) {
+        const formData = new FormData(); formData.append("file", workerFileInput);
+        try { await fetch(`${API_BASE}/api/upload`, { method: 'POST', body: formData, headers: uploadHeaders }); } catch(e){}
+        const text = await workerFileInput.text(); parseWorkerCSVToState(text);
+    }
+
+    if(!fileInput && !workerFileInput) renderAll();
+    
+    document.getElementById('config-modal').style.display = 'none';
+    loadConfig();
+}
+
+function loadConfig() {
+    document.getElementById('ui-company-name').textContent = localStorage.getItem('factoryComp');
+    document.getElementById('ui-facility-loc').textContent = localStorage.getItem('factoryLoc');
+    if(localStorage.getItem('factoryTargetOee')) {
+        TGT_OEE = parseInt(localStorage.getItem('factoryTargetOee'));
+        TGT_OUT = parseInt(localStorage.getItem('factoryTargetOut'));
+    }
+    document.getElementById('top-oee-sub').textContent = `Target: ${TGT_OEE}%`;
+    document.getElementById('top-out-sub').textContent = `Target: ${TGT_OUT.toLocaleString()}`;
+    
+    const savedLines = localStorage.getItem('factoryDataLines');
+    if (savedLines) { FD.lines = JSON.parse(savedLines); }
+    
+    const savedWorkers = localStorage.getItem('factoryWorkers');
+    if (savedWorkers) { FD.workers = JSON.parse(savedWorkers); }
+    
+    updateOverallKPIs();
+    renderAll();
+}
+
+function parseCSVToState(csvText) {
+    const rows = csvText.split('\n'); FD.lines = []; let totalOut = 0;
+    for(let i = 1; i < rows.length; i++) {
+        if(!rows[i].trim()) continue;
+        const cols = rows[i].split(',');
+        if(cols.length >= 6) {
+            const outVal = parseInt(cols[2]); totalOut += outVal;
+            FD.lines.push({ name: cols[0].trim(), oee: parseFloat(cols[1]), out: outVal, tgt: parseInt(cols[3]), dt: parseFloat(cols[4]), def: parseFloat(cols[5]) });
+        }
+    }
+    FD.trend.lbl = ["D1", "D2", "D3", "D4", "D5", "Today"];
+    FD.trend.out = [totalOut*0.9, totalOut*0.85, totalOut*1.05, totalOut*0.95, totalOut*0.98, totalOut];
+    localStorage.setItem('factoryDataLines', JSON.stringify(FD.lines));
+}
+
+function parseWorkerCSVToState(csvText) {
+    const rows = csvText.split('\n');
+    for(let i = 1; i < rows.length; i++) {
+        if(!rows[i].trim()) continue;
+        const cols = rows[i].split(',');
+        if(cols.length >= 7) { appendWorker(cols[0].trim(), cols[1].trim(), cols[2].trim(), cols[3].trim(), parseFloat(cols[4]), parseFloat(cols[5]), parseFloat(cols[6])); }
+    }
+    localStorage.setItem('factoryWorkers', JSON.stringify(FD.workers));
+}
+
+function appendWorker(ini, name, role, line, eff, hrs, fat) {
+    const c = COLOR_POOL[FD.workers.length % COLOR_POOL.length];
+    FD.workers.push({ini, name, role, line, eff, hrs, fat, bg:c.bg, tc:c.tc});
+}
+
+function updateOverallKPIs() {
+    if (FD.lines.length === 0) return;
+    let totalOut = 0; let totalOEE = 0;
+    FD.lines.forEach(l => { totalOut += l.out; totalOEE += l.oee; });
+    const avgOee = (totalOEE / FD.lines.length).toFixed(1);
+    
+    document.getElementById('top-oee').innerHTML = `${avgOee}<span class="kpi-u">%</span>`;
+    document.getElementById('top-out').innerHTML = `${totalOut.toLocaleString()}<span class="kpi-u"> units</span>`;
+    document.getElementById('sim-oee').textContent = `${avgOee}%`;
+    document.getElementById('sim-out').textContent = `${totalOut.toLocaleString()}`;
+    
+    const oeeDiv = document.getElementById('top-oee').nextElementSibling;
+    if(avgOee >= TGT_OEE) { oeeDiv.className = "kpi-d d-up"; oeeDiv.textContent = `▲ Target: ${TGT_OEE}%`; }
+    else { oeeDiv.className = "kpi-d d-dn"; oeeDiv.textContent = `▼ Target: ${TGT_OEE}%`; }
+    
+    const outDiv = document.getElementById('top-out').nextElementSibling;
+    if(totalOut >= TGT_OUT) { outDiv.className = "kpi-d d-up"; outDiv.textContent = `▲ Target: ${TGT_OUT}`; }
+    else { outDiv.className = "kpi-d d-dn"; outDiv.textContent = `▼ Target: ${TGT_OUT}`; }
+}
+
+function renderLines() {
+  const tbody = document.getElementById('lt-body');
+  if(FD.lines.length === 0) { tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px; color:#888;">No production data available. Log manually.</td></tr>`; return; }
+  tbody.innerHTML = FD.lines.map(l=>{
+    const sc = l.oee >= TGT_OEE ? 'b-green' : (l.oee >= TGT_OEE-15 ? 'b-blue' : 'b-red');
+    const st = l.oee >= TGT_OEE ? 'On target' : (l.oee >= TGT_OEE-15 ? 'Below target' : 'Critical');
+    const bc = l.oee >= TGT_OEE ? '#639922' : (l.oee >= TGT_OEE-15 ? '#3266ad' : '#e24b4a');
+    return `<tr><td style="font-weight:500">${l.name}</td><td><div style="display:flex;align-items:center;gap:5px"><div class="ob"><div class="obi" style="width:${l.oee}%;background:${bc}"></div></div>${l.oee}%</div></td><td>${l.out}/${l.tgt}</td><td>${l.dt}h</td><td style="color:${l.def>2?'#c0392b':'inherit'}">${l.def}%</td><td><span class="bdg ${sc}">${st}</span></td></tr>`;
+  }).join('');
+}
+
+function renderWorkers() {
+  const wg = document.getElementById('wk-g');
+  if(FD.workers.length === 0) { wg.innerHTML = `<div style="grid-column:1/-1; color:#888; text-align:center; padding:20px;">No worker telemetry synced. Log manually.</div>`; return; }
+  wg.innerHTML=FD.workers.map(w=>{
+    const fc=w.fat>60?'#e24b4a':w.fat>35?'#ef9f27':'#2d9a5f'; const fl=w.fat>60?'b-red':w.fat>35?'b-amber':'b-green'; const ft=w.fat>60?'High fatigue':w.fat>35?'Moderate':'Healthy'; const ec=w.eff>=90?'#2d9a5f':w.eff>=75?'#3266ad':'#e24b4a';
+    return`<div class="wk-c"><div class="wk-hd"><div class="wk-av" style="background:${w.bg};color:${w.tc}">${w.ini}</div><div><div class="wk-n">${w.name}</div><div class="wk-r">${w.role} · ${w.line}</div></div></div><div class="ws"><span class="wsl">Efficiency</span><span class="wsv" style="color:${ec}">${w.eff}%</span></div><div class="pb"><div class="pbi" style="width:${w.eff}%;background:${ec}"></div></div><div class="ws"><span class="wsl">Fatigue index</span><span class="wsv" style="color:${fc}">${w.fat}/100</span></div><div class="pb"><div class="pbi" style="width:${w.fat}%;background:${fc}"></div></div><span class="bdg ${fl}" style="font-size:9px;margin-top:6px;display:inline-block">${ft}</span></div>`;
+  }).join('');
+}
+
+function renderAlerts() {
+  const al = document.getElementById('al-list');
+  if(FD.alerts.length === 0) { al.innerHTML = `<div style="color:#888; padding:20px 0;">No active alerts. System nominal.</div>`; document.getElementById('alert-badge').textContent = 0; document.getElementById('alert-top-badge').textContent = "0 Critical"; return; }
+  al.innerHTML = FD.alerts.map(a=>{
+    const dc=a.lvl==='critical'?'#e24b4a':'#ef9f27'; const bc=a.lvl==='critical'?'b-red':'b-amber';
+    return`<div class="al-item"><div class="al-dot" style="background:${dc}"></div><div style="flex:1"><div style="display:flex;align-items:center;gap:7px;margin-bottom:2px"><span class="al-t">${a.t}</span><span class="bdg ${bc}" style="font-size:9px">${a.lvl}</span></div><div class="al-d">${a.d}</div><div class="al-m">${a.tm}</div></div></div>`;
+  }).join('');
+  const critCount = FD.alerts.filter(a=>a.lvl==='critical').length;
+  document.getElementById('alert-badge').textContent = critCount; document.getElementById('alert-top-badge').textContent = critCount + " Critical";
+}
+
+function initCharts(){
+  const tc='#888'; const gc='rgba(0,0,0,.06)';
+  if(trendChartInst) trendChartInst.destroy(); if(oeeChartInst) oeeChartInst.destroy();
+  const ctxTrend = document.getElementById('c-trend').getContext('2d'); const ctxOee = document.getElementById('c-oee').getContext('2d');
+  trendChartInst = new Chart(ctxTrend,{ type:'line', data:{ labels:FD.trend.lbl, datasets:[{label:'Output',data:FD.trend.out,borderColor:'#3266ad',backgroundColor:'rgba(50,102,173,0.1)',fill:true,tension:0.3,pointRadius:0,borderWidth:1.5}, {label:'Target',data:Array(Math.max(FD.trend.lbl.length, 1)).fill(TGT_OUT),borderColor:'#e24b4a',borderDash:[4,4],borderWidth:1,pointRadius:0,fill:false}] }, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:tc,font:{size:9},maxRotation:0,autoSkip:true,maxTicksLimit:7},grid:{color:gc}},y:{min:0, ticks:{color:tc,font:{size:9},callback:v=>(v/1000).toFixed(1)+'k'},grid:{color:gc}}}} });
+  oeeChartInst = new Chart(ctxOee,{ type:'bar', data:{ labels:FD.lines.map(l=>l.name), datasets:[{label:'OEE%',data:FD.lines.map(l=>l.oee),backgroundColor:FD.lines.map(l=>l.oee>=TGT_OEE?'#639922':l.oee>=(TGT_OEE-15)?'#3266ad':'#e24b4a'),borderRadius:3,borderSkipped:false}] }, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:tc,font:{size:10},autoSkip:false, maxRotation:45, minRotation:45},grid:{display:false}},y:{min:0,max:100,ticks:{color:tc,font:{size:9},callback:v=>v+'%'},grid:{color:gc}}}} });
+}
+
+function renderAll() { renderLines(); renderWorkers(); renderAlerts(); initCharts(); }
+
+function doSave() {
+  const lineName = document.getElementById('i-line').value || "Custom Line"; const u = +document.getElementById('i-units').value; const p = +document.getElementById('i-plan').value; const r = +document.getElementById('i-run').value; const df = +document.getElementById('i-def').value; const c = +document.getElementById('i-cyc').value;
+  if(!u||!p||!r||!c){document.getElementById('oee-out').textContent='Fill required fields.'; return;}
+  const oee = parseFloat(((r/p)*(u/((r*3600)/c))*((u-df)/u)*100).toFixed(1)); const def_pct = parseFloat(((df/u)*100).toFixed(1)); const dt_hrs = parseFloat((p - r).toFixed(1)); const tgt = Math.round((p*3600)/c);
+  FD.lines.push({ name: lineName, oee: oee, out: u, tgt: tgt, dt: dt_hrs, def: def_pct });
+  FD.trend.lbl.push(document.getElementById('i-date').value.slice(5)); FD.trend.out.push(u);
+  localStorage.setItem('factoryDataLines', JSON.stringify(FD.lines));
+  updateOverallKPIs(); renderAll();
+  document.getElementById('oee-out').textContent = `Line saved! OEE ${oee}%. Dashboard updated.`; document.getElementById('oee-out').style.color = '#2d9a5f';
+}
+
+function doSaveWorker() {
+    const ini = document.getElementById('w-ini').value; const name = document.getElementById('w-name').value; const role = document.getElementById('w-role').value; const line = document.getElementById('w-line').value; const eff = +document.getElementById('w-eff').value; const hrs = +document.getElementById('w-hrs').value; const fat = +document.getElementById('w-fat').value;
+    if(!ini || !name || !role || !line) { document.getElementById('wk-out').textContent = 'Fill all text fields.'; return; }
+    appendWorker(ini, name, role, line, eff, hrs, fat); localStorage.setItem('factoryWorkers', JSON.stringify(FD.workers)); renderWorkers();
+    document.getElementById('wk-out').textContent = 'Worker logged and Dashboard updated.'; document.getElementById('wk-out').style.color = '#2d9a5f';
+}
+
+document.querySelectorAll('.fn').forEach(el=>{
+  el.addEventListener('click',()=>{
+    const p=el.dataset.p;
+    document.querySelectorAll('.fn').forEach(n=>n.classList.remove('active'));
+    el.classList.add('active');
+    document.querySelectorAll('.fg-panel').forEach(x=>x.classList.add('hidden'));
+    document.getElementById('p-'+p).classList.remove('hidden');
+    const titles={dash:'Production Dashboard',data:'Data Input',ai:'AI Brain',twin:'Digital Twin Simulator',work:'Worker Analytics',alrt:'Alerts & Notifications'};
+    document.getElementById('tb-title').textContent=titles[p];
+  });
+});
+
+// ── WebSocket — auto-reconnect with exponential back-off ──────────────────────
+let motionState = { 0: "IDLE", 1: "0.0%" };
+let lastAlertKey = "";    // deduplication key
+let ppeViolationCount = parseInt(localStorage.getItem('ppeViolationCount') || '0');
+let ws = null;
+let wsReconnectDelay = 1000;
+let wsPendingInits = [];  // queued init_node commands while reconnecting
+
+// Configurable backend: set window.BACKEND_WS_URL before this script to override
+const WS_URL      = window.BACKEND_WS_URL      || "ws://localhost:8000/ws/iot";
+const API_BASE    = window.BACKEND_API_BASE     || "http://localhost:8000";
+const API_KEY_HDR = window.FACTORYGPT_API_KEY   || "";   // optional
+
+function wsConnect() {
+  ws = new WebSocket(WS_URL);
+
+  ws.onopen = () => {
+    wsReconnectDelay = 1000;
+    document.getElementById("ws-status").textContent = "Nodes Connected";
+    document.getElementById("ws-status").style.color = "#2d9a5f";
+    // Flush any pending init commands queued while offline
+    wsPendingInits.forEach(cmd => ws.send(JSON.stringify(cmd)));
+    wsPendingInits = [];
+  };
+
+  ws.onclose = () => {
+    document.getElementById("ws-status").textContent = `Reconnecting in ${(wsReconnectDelay/1000).toFixed(0)}s…`;
+    document.getElementById("ws-status").style.color = "#ef9f27";
+    setTimeout(wsConnect, wsReconnectDelay);
+    wsReconnectDelay = Math.min(wsReconnectDelay * 2, 30000);
+  };
+
+  ws.onerror = () => ws.close();  // triggers onclose → reconnect
+
+  ws.onmessage = function(event) {
+    let data;
+    try { data = JSON.parse(event.data); } catch { return; }
+    const nodeId = data.node_id;
+
+    // ── PPE alert with deduplication ─────────────────────────────────────────
+    if (data.alert) {
+      const alertKey = data.alert + "|" + data.timestamp.slice(0,5); // 1-min window
+      if (alertKey !== lastAlertKey) {
+        lastAlertKey = alertKey;
+        ppeViolationCount++;
+        localStorage.setItem('ppeViolationCount', ppeViolationCount);
+        const ts = new Date().toLocaleTimeString();
+
+        // Detect violation sub-types for richer alert title
+        const title = data.alert.includes("Hard Hat") && data.alert.includes("Vest")
+          ? "No Hard Hat & No Hi-Vis Vest"
+          : data.alert.includes("Hard Hat") ? "No Hard Hat Detected"
+          : data.alert.includes("Vest")     ? "No Hi-Vis Vest Detected"
+          : "PPE Violation Detected";
+
+        FD.alerts.unshift({ lvl: "critical", t: title, d: data.alert, tm: ts });
+        // Persist alerts (cap at 50)
+        if (FD.alerts.length > 50) FD.alerts.length = 50;
+        localStorage.setItem('factoryAlerts', JSON.stringify(FD.alerts));
+        renderAlerts();
+      }
+    }
+
+    // ── Camera feed ────────────────────────────────────────────────────────────
+    const img = document.getElementById(`cam-feed-${nodeId}`);
+    if (img && data.image) img.src = "data:image/jpeg;base64," + data.image;
+
+    // ── KPI badges ─────────────────────────────────────────────────────────────
+    if (nodeId === 0) {
+      motionState[0] = data.motion_pct > 0 ? "DETECTED" : "CLEAR";
+      document.getElementById("kpi-motion-0").textContent = motionState[0];
+      const bdg = document.getElementById("cam-bdg-0");
+      if (data.alert)           { bdg.className = "bdg b-red";   bdg.textContent = "VIOLATION"; }
+      else if (data.motion_pct) { bdg.className = "bdg b-amber"; bdg.textContent = "TRACKING"; }
+      else                      { bdg.className = "bdg b-green"; bdg.textContent = "CLEAR"; }
+    } else {
+      motionState[1] = data.motion_pct + "%";
+      document.getElementById("kpi-motion-1").innerHTML = motionState[1];
+      const bdg = document.getElementById("cam-bdg-1");
+      if (data.motion_pct > 2.0) { bdg.className = "bdg b-green"; bdg.textContent = "ACTIVE"; }
+      else                        { bdg.className = "bdg b-red";   bdg.textContent = "IDLE"; }
+    }
+  };
+}
+
+wsConnect();
+
+// Restore persisted alerts on load
+(function restoreAlerts() {
+  const saved = localStorage.getItem('factoryAlerts');
+  if (saved) { try { FD.alerts = JSON.parse(saved); } catch {} }
+})();
+
+function initCamera(nodeId) {
+  const camIdx = parseInt(document.getElementById(`sel-cam-${nodeId}`).value);
+  const cmd    = { command: "init_node", node: nodeId, camera_index: camIdx };
+
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify(cmd));
+  } else {
+    wsPendingInits.push(cmd);   // queue for when reconnection succeeds
+  }
+
+  document.getElementById(`overlay-${nodeId}`).style.display = "none";
+  document.getElementById(`cam-feed-${nodeId}`).style.display = "block";
+  document.getElementById(`cam-bdg-${nodeId}`).textContent = "BINDING…";
+  document.getElementById(`cam-bdg-${nodeId}`).className   = "bdg b-amber";
+}
+
+let hist = [];
+async function sendMsg() {
+  const inp = document.getElementById('ai-in'); const msg = inp.value.trim(); if(!msg) return;
+  inp.value = ''; addMsg('usr', msg); hist.push({role:'user', content:msg});
+  const btn = document.getElementById('send-btn'); btn.disabled = true; btn.textContent = 'Analyzing...';
+  const ld = addMsg('bot', '<span class="spin"></span> Processing...');
+  const avgOee = document.getElementById('top-oee').textContent;
+  
+  const SYS = `You are FactoryGPT, a brutally honest Industry 5.0 AI advisor for ${localStorage.getItem('factoryComp')}. Expose blind spots.
+LIVE CONTEXT: Node 0 (Worker Monitor): ${motionState[0]} (Current PPE Alert: ${lastAlertReceived || 'None'}) | Node 1 (Factory Layout): ${motionState[1]} | Overall OEE: ${avgOee} vs Target: ${TGT_OEE}%.
+INSTRUCTIONS: Maintain conversation continuity. Demand operational queries for greetings. Quantify reasoning.`;
+  
+  const chatPayload = hist.filter(m => m.role === 'user' || m.role === 'assistant').slice(-10);
+  try {
+    const aiHeaders = { 'Content-Type': 'application/json', ...(API_KEY_HDR ? { 'X-API-Key': API_KEY_HDR } : {}) };
+    const response = await fetch(`${API_BASE}/api/ai`, { method: 'POST', headers: aiHeaders, body: JSON.stringify({ system_prompt: SYS, messages: chatPayload }) });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || "Server failed to respond.");
+    ld.querySelector('.ai-m-body').innerHTML = data.response.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+    hist.push({ role: 'assistant', content: data.response });
+  } catch(e) { ld.querySelector('.ai-m-body').innerHTML = `<span style="color:#c0392b; font-weight:bold;">CRITICAL FAILURE:</span><br>${e.message}`; }
+  btn.disabled = false; btn.textContent = 'Analyze ↗';
+}
+
+function sq(m) { document.querySelectorAll('.fn').forEach(n=>{if(n.dataset.p==='ai')n.click()}); document.getElementById('ai-in').value=m; sendMsg(); }
+function addMsg(role,html){ const c=document.getElementById('ai-msgs'); const d=document.createElement('div'); d.className='ai-m '+role; d.innerHTML=`<div class="ai-m-lbl">${role==='usr'?'You':'FactoryGPT'}</div><div class="ai-m-body">${html}</div>`; c.appendChild(d); c.scrollTop=c.scrollHeight; return d; }
+
+function upTwin(){
+  const sp=+document.getElementById('sl-sp').value; const wk=+document.getElementById('sl-wk').value;
+  document.getElementById('sv-sp').textContent=sp+'%'; document.getElementById('sv-wk').textContent=wk;
+  const currOee = parseFloat(document.getElementById('top-oee').textContent) || 0; const currOut = parseInt(document.getElementById('top-out').textContent.replace(/,/g, '')) || 0;
+  const sOee=Math.min(currOee*(sp/100)*(Math.min(1+(wk-6)*0.045,1.3)),97).toFixed(1); const sOut=Math.round(currOut*(sp/100)*(Math.min(1+(wk-6)*0.045,1.3)));
+  document.getElementById('sim-oee').textContent=sOee+'%'; document.getElementById('sim-out').textContent=sOut.toLocaleString();
+}
+
+async function runTwinAI() {
+  const ld = document.getElementById('tw-ld'); const out = document.getElementById('twin-out');
+  ld.style.display = 'inline'; out.textContent = 'Analyzing scenario...';
+  const prompt = `Analyze what-if scenario: Speed ${document.getElementById('sl-sp').value}%, Workers ${document.getElementById('sl-wk').value}. Give financial ROI and risks.`;
+  try {
+    const twHeaders = { 'Content-Type': 'application/json', ...(API_KEY_HDR ? { 'X-API-Key': API_KEY_HDR } : {}) };
+    const r = await fetch(`${API_BASE}/api/ai`, { method: 'POST', headers: twHeaders, body: JSON.stringify({ system_prompt: "You are FactoryGPT.", messages: [{role: "user", content: prompt}] }) });
+    const d = await r.json(); if (!r.ok) throw new Error(d.detail);
+    out.textContent = d.response;
+  } catch(e) { out.textContent = `API Error: ${e.message}`; }
+  ld.style.display = 'none';
+}
+</script>
+</body>
+</html>

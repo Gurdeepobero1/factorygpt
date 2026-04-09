@@ -1,0 +1,4 @@
+Worker_ID,Machine,Hours_Worked,Units_Produced,Defects
+W-101,CNC-A,4,150,2
+W-102,CNC-B,9,110,18
+W-103,Assembly,5,200,5

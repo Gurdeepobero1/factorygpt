@@ -1,0 +1,41 @@
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv
+*.egg-info/
+dist/
+build/
+
+# ── Secrets & local data ──────────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+*.db
+*.sqlite
+*.sqlite3
+factorygpt.db
+
+# ── ML weights (too heavy for git) ────────────────────────────────────────────
+*.pt
+yolov8n.pt
+
+# ── OS & editor ───────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ── Claude / local launch config ──────────────────────────────────────────────
+.claude/launch.json
+
+# ── Logs ──────────────────────────────────────────────────────────────────────
+*.log
+logs/
